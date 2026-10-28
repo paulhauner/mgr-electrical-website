@@ -49,13 +49,30 @@ def game_images():
         f = man['frames'][name]
         return atlas.crop((f['x'], f['y'], f['x'] + f['w'], f['y'] + f['h']))
 
-    def scene(mode, lit_ids, mac=None, mac_x=None):
+    def scene(mode, lit_ids, mac=None, mac_x=None, ac_ids=(), street=True):
+        """A still of the game: lit houses, running aircons, streetlights on."""
         bg = Image.open(os.path.join(g, f'bg-{mode}.png')).convert('RGBA')
         lit = Image.open(os.path.join(g, f'lit-{mode}.png')).convert('RGBA')
         for h in man['houses']:
             if h['id'] in lit_ids:
                 box = (h['x'], h['y'], h['x'] + h['w'], h['y'] + h['h'])
                 bg.paste(lit.crop(box), box[:2])
+        px = bg.load()
+        for h in man['houses']:
+            if h['id'] not in ac_ids:
+                continue
+            cx, cy = h['cond']
+            bg.alpha_composite(frame('condenser-a'), (cx - 1, cy - 1))
+            for ux, uy in h['heads']:
+                px[ux + 7, uy] = (63, 169, 224, 255)
+                for k, ph in enumerate((0.15, 0.5, 0.8)):
+                    for dx in (0, 1):
+                        px[ux + 1 + k * 3 + dx, uy + 5 + round(ph * 6)] = (134, 205, 238, 255)
+        if street:
+            gl = frame('glow-street')
+            for lx, ly, gx, gy in man['streetlights']:
+                bg.alpha_composite(gl, (gx - (gl.width - 1) // 2, gy - (gl.height - 1) // 2))
+                px[lx, ly] = (255, 230, 160, 255)
         if mac:
             m = frame(mac)
             bg.alpha_composite(m, (mac_x - m.width // 2, man['world']['path'] - m.height))
@@ -69,13 +86,14 @@ def game_images():
 def make_images(out):
     man, frame, scene = game_images()
     # poster shown before the game boots (and if JS is off)
-    poster = scene('dusk', {'qld', 'shop'}, 'mac-box', 159)
+    poster = scene('dusk', {'qld', 'brick', 'shop', 'units'}, 'mac-box', 159, ac_ids={'qld', 'shop'})
     poster.convert('RGB').save(os.path.join(out, 'game', 'poster.png'), optimize=True)
     # page art sprites at 1x (CSS scales them, pixelated)
     for name in ('mac-idle', 'mac-wave', 'mac-box', 'ute'):
         frame(name).save(os.path.join(out, 'img', f'{name}.png'), optimize=True)
     # social share card 1200x630
-    night = scene('night', {h['id'] for h in man['houses']}, 'mac-wave', 158)
+    everyone = {h['id'] for h in man['houses']}
+    night = scene('night', everyone, 'mac-wave', 158, ac_ids=everyone)
     card = Image.new('RGB', (1200, 630), (20, 20, 20))
     s = night.convert('RGB').resize((night.width * 3, night.height * 3), Image.NEAREST)
     card.paste(s.crop((0, 0, 1188, 450)), (6, 180))
@@ -96,7 +114,7 @@ def make_images(out):
     # favicons
     src = Image.open(os.path.join(ROOT, 'art', 'logo-capture.png')).convert('L')
     src = src.crop(src.point(lambda v: 255 if v > 60 else 0).getbbox())
-    for size, name in ((32, 'favicon-32.png'), (180, 'apple-touch-icon.png'), (512, 'icon-512.png')):
+    for size, name in ((32, 'favicon-32.png'), (180, 'apple-touch-icon.png'), (180, 'favicon.png'), (512, 'icon-512.png')):
         pad = round(size * 0.1)
         w = size - pad * 2
         m = src.resize((w, round(src.height * w / src.width)), Image.LANCZOS)

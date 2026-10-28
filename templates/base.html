@@ -21,6 +21,7 @@
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="{{ base_url }}/img/og-image.png">
 <link rel="icon" href="img/favicon-32.png" sizes="32x32" type="image/png">
 <link rel="apple-touch-icon" href="img/apple-touch-icon.png">
 <link rel="preload" href="fonts/BarlowCondensed-ExtraBold.woff2" as="font" type="font/woff2" crossorigin>
@@ -59,7 +60,10 @@
 </script>
 </head>
 <body class="page-{{ slug }}">
-<a class="skip" href="#main">Skip to content</a>
+{% if not preview %}
+<noscript><iframe src="https://www.googletagmanager.com/ns.html?id=GTM-NDL5ZBQB" height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
+{% endif %}
+<a class="skip" href="#main">Skip to content</a>{% if false %}{% block quote_href %}#quote{% endblock %}{% endif %}
 
 <header class="site-header">
   <div class="wrap header-inner">
@@ -70,8 +74,8 @@
       {% endfor %}
     </nav>
     <div class="header-actions">
-      {{ m.call_btn('header', '0434 023 625', 'btn btn-call header-call') }}
-      <a class="btn btn-ghost header-quote" href="#quote">Free quote</a>
+      {{ m.call_btn('header-call', '0434 023 625', 'btn btn-call header-call') }}
+      <a class="btn btn-ghost header-quote" href="{{ self.quote_href() }}">Free quote</a>
       <button class="menu-btn" type="button" aria-label="Open menu" aria-expanded="false" aria-controls="switchboard" data-menu-open>{{ m.icon('menu', 22) }}</button>
     </div>
   </div>
@@ -98,7 +102,7 @@
         <span class="breaker-body" aria-hidden="true"><span class="breaker-rating">SAFETY SW</span><span class="rcd-btn">T</span><span class="breaker-rating">TEST</span></span>
       </a>
     </nav>
-    {{ m.call_btn('menu', 'Call Mac · 0434 023 625', 'btn btn-call') }}
+    {{ m.call_btn('menu-call', 'Call Mac · 0434 023 625', 'btn btn-call') }}
     <a class="btn btn-ghost" href="mailto:mac@mgrelectrical.com.au">{{ m.icon('mail') }}mac@mgrelectrical.com.au</a>
     <p class="board-meta">Woolgoolga, the northern beaches, Coffs Harbour and Grafton. Domestic, commercial, air conditioning and 24 hour emergency work.</p>
     <p class="lic">NSW Lic 337267C · QLD Lic 79153</p>
@@ -114,7 +118,8 @@
     <div class="intro">
       <span class="tape">Get a quote</span>
       <h2 id="quote-h">Tell Mac what you need.</h2>
-      <p>Fill this in and you’ll get a call back. If it’s urgent, skip the form and <a href="tel:0434023625" data-cta="quote-urgent">ring 0434 023 625</a>.</p>
+      <p>Fill this in and you’ll get a call back. If it’s urgent, don’t fill in a form — just ring.</p>
+      <div>{{ m.call_btn('form-call', 'Call 0434 023 625', 'btn btn-dark') }}</div>
       <p>Prefer email? <a href="mailto:mac@mgrelectrical.com.au">mac@mgrelectrical.com.au</a></p>
     </div>
     <form id="enquiryForm" method="post" action="/api/enquiry" novalidate>
@@ -165,8 +170,8 @@
     <div class="foot">
       <div class="about">
         <img src="img/logo.svg" alt="MGR Electrical" width="110" height="82" loading="lazy">
-        <p>Licensed electrical contractor servicing Woolgoolga, the northern beaches, Coffs Harbour and Grafton. Domestic, commercial, air conditioning and 24 hour emergency work.</p>
-        <p class="lic">NSW Lic 337267C · QLD Lic 79153</p>
+        <p>Licensed electrical contractor servicing Woolgoolga, the northern beaches and Coffs Harbour. Domestic, commercial, air conditioning and 24 hour emergency work.</p>
+        <p class="lic">NSW Lic: 337267C · QLD Lic: 79153</p>
       </div>
       <div>
         <h2>Services</h2>
@@ -183,7 +188,7 @@
         <h2>Areas</h2>
         <ul>
           <li><span>Woolgoolga</span></li>
-          <li><span>Northern beaches</span></li>
+          <li><span>Sandy Beach</span></li>
           <li><span>Coffs Harbour</span></li>
           <li><a href="grafton-electrician">Grafton</a></li>
         </ul>
@@ -191,7 +196,7 @@
       <div>
         <h2>Get in touch</h2>
         <ul>
-          <li><a href="tel:0434023625" data-cta="footer">0434 023 625</a></li>
+          <li><a href="tel:+61434023625" data-cta="footer-call">0434 023 625</a></li>
           <li><a href="mailto:mac@mgrelectrical.com.au">mac@mgrelectrical.com.au</a></li>
           <li><a href="contact">Contact &amp; quotes</a></li>
           <li><a href="./?play=storm#play">Play Storm Night</a></li>
@@ -203,8 +208,8 @@
 </footer>
 
 <div class="callbar" data-callbar>
-  {{ m.call_btn('sticky') }}
-  <a class="btn btn-ghost" href="#quote">Free quote</a>
+  {{ m.call_btn('sticky-call') }}
+  <a class="btn btn-ghost" href="{{ self.quote_href() }}">Get a quote</a>
 </div>
 
 {% block scripts %}{% endblock %}

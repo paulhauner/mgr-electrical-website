@@ -1,10 +1,11 @@
 {% extends 'base.html' %}
 {% import '_macros.html' as m %}
 {% block title %}Electrician Woolgoolga & Coffs Coast | 24 Hour Service | MGR Electrical{% endblock %}
+{% block og_title %}MGR Electrical — Woolgoolga & Coffs Coast Electrician{% endblock %}
 {% block description %}Licensed electrician servicing Woolgoolga, Sandy Beach and the Coffs Coast. Domestic, commercial and air conditioning. 24 hour emergency callouts. Free quotes — call Mac on 0434 023 625.{% endblock %}
 {% block main %}
-<section class="stage" id="play" data-game="game/" aria-label="Mac’s Street, a little game: tap a house to send Mac, or play Storm Night">
-  <img class="stage-poster px" src="game/poster.png?v={{ v }}" width="1188" height="450" alt="Pixel-art Woolgoolga street at dusk: Mac carrying an air conditioner past cutaway houses, his ute parked out front">
+<section class="stage" id="play" data-game="game/" aria-label="Mac’s Street, a little game: flick the main switch, tap a house to send Mac, or play Storm Night">
+  <img class="stage-poster px" src="game/poster.png?v={{ v }}" width="396" height="162" alt="Pixel-art Woolgoolga street at dusk: Mac carrying an outdoor aircon unit past cutaway houses, his ute parked out front">
   <canvas aria-hidden="true"></canvas>
   <div class="hud">
     <div class="hud-tl">
@@ -12,9 +13,6 @@
       <div class="power" data-hud-power hidden></div>
     </div>
     <div class="hud-tr">
-      <button class="hud-btn" type="button" data-sound aria-pressed="false" aria-label="Sound off. Turn sound on">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 5 6 9H2v6h4l5 4V5z"/><path data-sound-x d="m22 9-6 6M16 9l6 6"/><path data-sound-waves d="M15.5 8.5a5 5 0 0 1 0 7M18.5 5.5a9 9 0 0 1 0 13" hidden/></svg>
-      </button>
       <button class="hud-btn amber" type="button" data-storm>{{ m.icon('bolt', 16) }}Storm Night</button>
       <div class="hud-stat" data-hud-time hidden><span>Time</span><b>0:30</b></div>
       <div class="hud-stat amber" data-hud-score hidden><span>Fixed</span><b>0</b></div>
@@ -28,8 +26,8 @@
     <div class="overlay" data-intro hidden>
       <div class="card-o">
         <span class="tape">Storm Night</span>
-        <p style="font-size:17px;color:var(--paper);font-weight:600;margin-top:6px">Lightning keeps knocking houses out. Tap the dark ones to send Mac before the whole street goes black.</p>
-        <p>30 seconds. One sparky. Go.</p>
+        <p style="font-size:17px;color:var(--paper);font-weight:600;margin-top:6px">Lightning keeps knocking houses out. Tap the dark ones to send Mac.</p>
+        <p>If the main switch trips, flick it back on, fast. 30 seconds. One sparky. Go.</p>
         <div class="btn-pair">
           <button class="btn btn-call" type="button" data-go>{{ m.icon('bolt', 18) }}Start</button>
           <button class="btn btn-ghost" type="button" data-cancel>Not now</button>
@@ -48,7 +46,7 @@
           <button class="btn btn-ghost" type="button" data-again>Go again</button>
           <button class="btn btn-ghost" type="button" data-done>Back to street</button>
         </div>
-        <p class="fine">Got a real fault? Mac’s an actual sparky. <a href="tel:0434023625" data-cta="game-results">0434 023 625</a></p>
+        <p class="fine">Got a real fault? Mac’s an actual sparky. <a href="tel:+61434023625" data-cta="game-call">0434 023 625</a></p>
       </div>
     </div>
     <p class="toast" data-toast hidden role="status"></p>
@@ -56,17 +54,18 @@
 </section>
 
 <div class="switch-wrap">
-  <button class="switch" type="button" data-switch aria-pressed="false" aria-label="Street light switch"><span class="rocker" aria-hidden="true"></span></button>
-  <span class="tape" data-switch-label>Flick it</span>
+  <button class="switch" type="button" data-switch aria-pressed="false" aria-label="Main switch: off"><span class="rocker" aria-hidden="true"></span></button>
+  <span class="tape" data-switch-label>Main switch</span>
 </div>
 
 <div class="wrap hero-copy">
   <div class="lead">
-    <h1>Your local sparky.<br>On call 24 hours.</h1>
-    <p class="lede">Electrical and air conditioning for homes and businesses — Woolgoolga, the Coffs Coast and inland to Grafton. Licensed, insured, and straight on the phone when something goes wrong.</p>
+    <span class="tape">Woolgoolga &amp; the Coffs Coast</span>
+    <h1>Your local sparky,<br>on call 24 hours.</h1>
+    <p class="lede">Domestic, commercial and air conditioning work across Woolgoolga, Sandy Beach and Coffs Harbour. Licensed, insured, and straight on the phone when something goes wrong.</p>
     <div class="btn-row" data-hero-cta>
-      {{ m.call_btn('hero') }}
-      <a class="btn btn-ghost" href="#quote">Free quote</a>
+      {{ m.call_btn('hero-call', 'Call 0434 023 625') }}
+      <a class="btn btn-ghost" href="#quote">Get a free quote</a>
     </div>
   </div>
   <ul class="ticks">
@@ -88,43 +87,42 @@
     </div>
     <div class="grid">
       <article class="card">
-        <div class="card-top"><h3>Electrical<br>homes &amp; business</h3>{{ m.icon('gpo', 92) }}</div>
+        <div class="card-top"><h3>Domestic &amp; Commercial Electrical</h3>{{ m.icon('gpo', 92) }}</div>
         <p>Repairs, upgrades, new installs and fault finding for homes, shops and sites.</p>
         <ul>
           <li>Switchboard upgrades &amp; safety switches</li>
           <li>Power points, lighting &amp; LED upgrades</li>
           <li>Fault finding &amp; repairs</li>
-          <li>Renovations, extensions &amp; commercial fit-outs</li>
+          <li>Renovations, extensions &amp; fit-outs</li>
         </ul>
         <div class="more"><a href="electrical">Electrical services →</a></div>
       </article>
       <article class="card">
-        <div class="card-top"><h3>Air<br>conditioning</h3>{{ m.sprite('mac-box', 3) }}</div>
-        <p>Split systems supplied, installed and serviced. One trade handles the lot — the unit, the circuit and the sign-off.</p>
+        <div class="card-top"><h3>Air Conditioning</h3>{{ m.sprite('mac-box', 3) }}</div>
+        <p>Split system supply and installation, plus servicing to keep it running right.</p>
         <ul>
-          <li>Single and multi-head split systems</li>
+          <li>Split system supply &amp; install</li>
           <li>Replacements &amp; upgrades</li>
-          <li>Servicing, leaks, noises &amp; error codes</li>
-          <li>Straight advice on sizing before you buy</li>
+          <li>Servicing &amp; fault finding</li>
+          <li>Advice on sizing the right unit</li>
         </ul>
-        <div class="more"><a href="aircon-installation">New system →</a><a href="aircon-service-repairs">Service or repair →</a></div>
+        <div class="more"><a href="air-conditioning">Air conditioning →</a><a href="aircon-installation">New system →</a><a href="aircon-service-repairs">Service or repair →</a></div>
       </article>
       <article class="card hot">
-        <div class="card-top"><h3>24 hour<br>emergency</h3>{{ m.sprite('ute', 2) }}</div>
-        <p>Power out, burning smell, breaker that won’t stay on? Ring any hour and get a real answer.</p>
+        <div class="card-top"><h3>24 Hour Emergency</h3>{{ m.sprite('ute', 2) }}</div>
+        <p>Power out, burning smell, tripping breaker? Call any hour and get a real answer.</p>
         <ul>
           <li>Total or partial power loss</li>
           <li>Burning smells &amp; hot fittings</li>
           <li>Breakers tripping repeatedly</li>
           <li>Storm &amp; water damage</li>
         </ul>
-        <div class="more">{{ m.call_btn('services-emergency', 'Call now · 0434 023 625', 'btn btn-call') }}</div>
+        <div class="more">{{ m.call_btn('emergency-card-call', 'Call now · 0434 023 625', 'btn btn-call') }}<a href="emergency">24 hour emergency →</a></div>
       </article>
     </div>
     <div class="chips" style="margin-top:16px">
       <a class="chip" href="storm-electrician">Storm damage &amp; surge protection</a>
       <a class="chip" href="grafton-electrician">Electrician in Grafton</a>
-      <a class="chip" href="emergency">24 hour emergency</a>
     </div>
   </div>
 </section>
@@ -139,9 +137,9 @@
       </div>
     </div>
     <div class="copy">
-      <p>MGR Electrical is Mac. You deal with the bloke doing the work, not a call centre — straight answers on what a job needs, what it’ll cost and when it’ll be done.</p>
+      <p>MGR Electrical is run by Mac — you deal with the bloke doing the work, not a call centre. That means straight answers on what a job needs, what it’ll cost, and when it’ll be done.</p>
       <p>Most electrical work on the Coffs Coast is won or lost on one thing: whether somebody answers the phone. Mac does.</p>
-      <div class="btn-row">{{ m.call_btn('why-mac', 'Call Mac · 0434 023 625') }}</div>
+      <div class="btn-row">{{ m.call_btn('why-call', 'Call Mac · 0434 023 625') }}</div>
     </div>
   </div>
 </section>
@@ -151,7 +149,7 @@
     <div class="card cool" style="max-width:760px">
       <span class="tape tape-cool">Aircon tip</span>
       <h3 id="tip-h">Book before the heat, not during it.</h3>
-      <p>Every summer the first proper hot week arrives and every sparky on the coast is booked out for a fortnight. If your unit struggled last summer, get it looked at before the next one. Same job, no waiting.</p>
+      <p>Every summer the first proper hot week arrives and every sparky on the coast is booked out for a fortnight. If your unit struggled last summer, get it looked at before the next one.</p>
       <div class="more"><a href="aircon-service-repairs">Book an aircon service →</a><a href="aircon-installation">Get a new system quoted →</a></div>
     </div>
   </div>
@@ -161,10 +159,10 @@
   <div class="wrap">
     <div class="block-head">
       <div class="stack">
-        <span class="tape">Where we work</span>
-        <h2 id="area-h">Woolgoolga and the whole Coffs Coast.</h2>
+        <span class="tape">Service area</span>
+        <h2 id="area-h">Servicing the Coffs Coast.</h2>
       </div>
-      <p>North to Corindi, south to Sawtell, inland to Grafton, and everywhere between. A bit further out? Ring and ask — you’ll get a straight answer.</p>
+      <p>Based in Woolgoolga and working right along the coast — north to Corindi, south to Sawtell, inland to Grafton, and everywhere between.</p>
     </div>
     {{ m.route(m.COAST, inland=['Grafton'], inland_note='Regular work through Grafton and the Clarence Valley — no travel fee.') }}
   </div>
@@ -174,11 +172,11 @@
   <div class="wrap">
     <div class="block-head"><div class="stack"><span class="tape">Common questions</span><h2 id="faq-h">Before you call.</h2></div></div>
     {{ m.faq([
-      ('Do you really answer at 2am?', 'Emergency callouts are exactly that — if it can’t wait until morning, ring and you’ll get Mac. For anything that can wait, leave a message overnight and he’ll call back first thing.'),
-      ('Are quotes free?', 'Yes, with no obligation. For bigger jobs Mac comes out and looks at it properly rather than guessing over the phone.'),
-      ('How far do you travel?', 'Woolgoolga and the northern beaches are home turf, with regular work through Coffs Harbour, south to Sawtell and inland to Grafton. If it’s a bit further out, ring and ask — you’ll be told straight.'),
-      ('Do you do air conditioning as well as electrical?', 'Yes — split system supply, installation, replacement and servicing. Doing both means one trade handles the whole job instead of you coordinating two.'),
-      ('Are you licensed and insured?', 'Fully licensed and insured. The licence numbers are at the bottom of every page, and they go on every quote and invoice.'),
+      ('Do you really answer at 2am?', 'Emergency callouts are exactly that — if it can’t wait until morning, ring the number and you’ll get Mac. For anything that can wait, a message overnight gets a call back first thing.'),
+      ('Are quotes free?', 'Yes. Quotes are free and there’s no obligation. For bigger jobs Mac will come out and look at it properly rather than guessing over the phone.'),
+      ('How far do you travel?', 'Woolgoolga and the northern beaches are home turf, and we regularly work through Coffs Harbour, south to Sawtell and inland to Grafton. Ring and ask — if it’s a bit further out, we’ll tell you straight.'),
+      ('Do you do air conditioning as well as electrical?', 'Yes — split system supply, installation, replacement and servicing. Doing both means one trade handles the whole job instead of coordinating two.'),
+      ('Are you licensed and insured?', 'Fully licensed and insured. The licence number is at the bottom of every page on this site, and it goes on every quote and invoice.'),
     ]) }}
   </div>
 </section>

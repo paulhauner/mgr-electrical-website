@@ -2,7 +2,7 @@
 
 The new site for [MGR Electrical](https://mgrelectrical.com.au), Mac's electrical and air conditioning business in Woolgoolga, the Coffs Coast and Grafton.
 
-The home page opens on **Mac's Street**, a little pixel-art game. Mac does his rounds on his own, you can tap houses and flick the street-light switch, and **Storm Night** is a 30-second round with a score you can send to a mate.
+The home page opens on **Mac's Street**, a little pixel-art game that plays itself. The big switch under it is the street's **main switch**: it powers the house lights, the aircons and the streetlights (leave it off and Mac turns it back on). Mac fetches globes from the ute for blown lights, carries outdoor units over to install aircons (cool or warm air comes out once they're in), and services the ones flashing red. Tap a house with a job to send him. **Storm Night** is a 30-second round: tap houses the lightning knocks out, and flick the main back on when it trips. The score can be sent to a mate.
 
 - **Preview:** https://paulhauner.github.io/mgr-electrical-website/ (GitHub Pages, served from `docs/`; marked `noindex`)
 - **Live:** https://mgrelectrical.com.au (not switched over yet)
@@ -45,7 +45,9 @@ python3 build.py
 The old site runs on Cloudflare Pages with a `_worker.js` that handles the quote form at `/api/enquiry`, plus Google Tag Manager and Google Ads call tracking. The new site keeps all of that:
 
 - the form posts the same JSON, with the same field names, to the same `/api/enquiry`
-- GTM `GTM-NDL5ZBQB` and the Ads phone-number swap (`AW-18421058252`) are in every page, but **only load on mgrelectrical.com.au**, so the preview never pollutes the ad data
+- GTM `GTM-NDL5ZBQB` and the Ads phone-number swap (`AW-18421058252`) are in every page, but **only load on mgrelectrical.com.au**, so the preview never pollutes the ad data. The GTM `<noscript>` iframe is only written into production builds
+- phone links use the same `tel:+61434023625` format and the same `data-cta` names as the old site (`header-call`, `hero-call`, `form-call`, `footer-call`, `sticky-call`, …), so `phone_click` reporting in GTM keeps its labels
+- titles, meta descriptions, og:titles, canonicals and the page copy are carried over from the old site word for word
 - every old URL still exists: `/electrical`, `/air-conditioning`, `/aircon-service-repairs`, `/aircon-installation`, `/emergency`, `/storm-electrician`, `/grafton-electrician`, `/contact`
 
 To launch:

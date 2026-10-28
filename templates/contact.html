@@ -1,31 +1,50 @@
 {% extends '_page.html' %}
 {% import '_macros.html' as m %}
 {% block title %}Contact MGR Electrical | Woolgoolga Electrician | Free Quotes{% endblock %}
-{% block description %}Free quotes from MGR Electrical. Phone answered 24 hours for emergencies. Woolgoolga, the northern beaches, Coffs Harbour and Grafton.{% endblock %}
-{% block eyebrow %}Contact{% endblock %}
+{% block og_title %}Contact MGR Electrical{% endblock %}
+{% block description %}Get a free quote from MGR Electrical. Phone answered 24 hours for emergencies. Servicing Woolgoolga, the northern beaches, Coffs Harbour and Grafton.{% endblock %}
+{% block hero_cta %}contact-hero-call{% endblock %}
+{% block eyebrow %}Get in touch{% endblock %}
 {% block h1 %}Talk to Mac.{% endblock %}
 {% block lede %}Quotes are free. For anything urgent, ring rather than filling in the form — the phone is answered 24 hours.{% endblock %}
+{% block hero_buttons %}
+{{ m.call_btn('contact-hero-call', 'Call 0434 023 625') }}
+<a class="btn btn-ghost" href="mailto:mac@mgrelectrical.com.au">{{ m.icon('mail') }}Email Mac</a>
+{% endblock %}
 {% block art %}{{ m.sprite('mac-wave', 7, 'Pixel-art Mac giving a wave') }}{% endblock %}
 {% block content %}
 <section class="block" aria-label="Ways to get in touch">
   <div class="wrap grid">
     <article class="card hot">
       <span class="tape tape-amber">Phone</span>
-      <h3><a href="tel:0434023625" data-cta="contact-card" style="color:inherit;text-decoration:none">0434 023 625</a></h3>
-      <p>Answered 24 hours for emergencies. The fastest way to get Mac.</p>
-      <div class="more">{{ m.call_btn('contact-card-btn') }}</div>
+      <h3>0434 023 625</h3>
+      <p>Answered 24 hours for emergencies. Best way to reach Mac for anything urgent.</p>
+      <div class="more">{{ m.call_btn('contact-card-call', '0434 023 625') }}</div>
     </article>
     <article class="card">
       <span class="tape">Email</span>
       <h3 style="font-size:1.35rem;text-transform:none;font-family:var(--sans);font-weight:700"><a href="mailto:mac@mgrelectrical.com.au" style="color:inherit">mac@mgrelectrical.com.au</a></h3>
-      <p>Good for quotes, plans and photos. You’ll hear back within a day.</p>
+      <p>Good for quotes, plans and anything with photos attached. Replies within a day.</p>
+      <div class="more"><a href="mailto:mac@mgrelectrical.com.au">Email Mac →</a></div>
     </article>
     <article class="card">
-      <span class="tape">Based in</span>
+      <span class="tape">Where we work</span>
       <h3>Woolgoolga NSW 2456</h3>
-      <p>Working from Corindi to Sawtell on the Coffs Coast, and inland to Grafton.</p>
-      <p class="lic">NSW Lic 337267C · QLD Lic 79153</p>
+      <p>Based in Woolgoolga NSW 2456, working the Coffs Coast from Corindi to Sawtell.</p>
+      <div class="more"><a href="#quote">Send an enquiry →</a></div>
     </article>
+  </div>
+</section>
+
+<section class="block raised" aria-labelledby="area-h">
+  <div class="wrap">
+    <div class="block-head">
+      <div class="stack"><span class="tape">Service area</span><h2 id="area-h">Where we work.</h2></div>
+      <p>Based in Woolgoolga, working right along the Coffs Coast and inland to Grafton.</p>
+    </div>
+    {{ m.route(m.COAST, inland=['Grafton']) }}
+    <div class="btn-row" style="margin-top:24px">{{ m.call_btn('areas-call', 'Call 0434 023 625') }}</div>
+    <p class="lic" style="margin-top:20px">NSW Lic: 337267C · QLD Lic: 79153</p>
   </div>
 </section>
 {% endblock %}

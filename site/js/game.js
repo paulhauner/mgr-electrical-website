@@ -1,7 +1,19 @@
 /* Mac's Street — the little game on the MGR Electrical home page.
    Art lives in /game as 1x pixel layers (see art/export_game.py); this file
    composites them into a 1x "world" canvas every frame and scales that up
-   with nearest-neighbour onto the visible canvas. No libraries. */
+   with nearest-neighbour onto the visible canvas. No libraries, no sound.
+
+   How the street works:
+   - The big switch under the stage is the street's MAIN SWITCH. Off means no
+     house lights, no aircons, no streetlights. Leave it off and Mac walks to
+     the meter box and puts it back on himself.
+   - Each house has a light and an aircon. A blown globe = Mac fetches a globe
+     from the ute and puts it in. No outdoor unit = Mac carries one over and
+     installs it, then cool (or warm) air comes out. An aircon "playing up"
+     (red light flashing) = Mac services it.
+   - Storm Night: lightning knocks houses out (tap them to send Mac), and now
+     and then trips the main switch. Flick it back on fast or the street
+     blacks out. */
 (function () {
   'use strict';
 
@@ -16,15 +28,19 @@
   var switchLabel = document.querySelector('[data-switch-label]');
   var reduceMotion = !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches);
   var finePointer = !!(window.matchMedia && matchMedia('(pointer: fine)').matches);
+  var TAP = finePointer ? 'Click' : 'Tap';
 
   var M, IMG = {}, HOUSE = {}, world, wctx;
   var dpr = 1, scale = 1, viewW = 0, viewH = 0, viewY = 0, camX = 0;
-  var S = null;
+  var S = null, clock = 0;
   var raf = 0, last = 0, inView = true;
 
   var MAC_LINES = ['G’day.', 'Need a sparky? 0434 023 625', 'Don’t touch the switchboard.', 'Back in a tick.', 'Ute’s got everything.'];
   var RANKS = [[0, 'First-year apprentice'], [6, 'Fourth-year apprentice'], [12, 'A-grade sparky'], [18, 'Leading hand'], [25, 'Boss of the board']];
   var Z = ['OOOO', '..O.', '.O..', 'OOOO'];
+  var AIR = { cool: '#86CDEE', warm: '#F59A5B' };
+  var TRIP_LIMIT = 6;      // seconds to reset a tripped main before blackout
+  var STORM_LEN = 30;
 
   function clamp(v, a, b) { return v < a ? a : v > b ? b : v; }
   function rand(a, b) { return a + Math.random() * (b - a); }
@@ -46,7 +62,7 @@
       M = m;
       var names = ['bg-dusk', 'lit-dusk', 'bg-night', 'lit-night', 'bg-storm', 'lit-storm', 'sprites'];
       return Promise.all(names.map(function (n) {
-        return loadImage(base + n + '.png').then(function (i) { IMG[n] = i; });
+        return loadImage(base + n + '.png?v=2').then(function (i) { IMG[n] = i; });
       }));
     })
     .then(init)
@@ -61,44 +77,51 @@
     wctx.imageSmoothingEnabled = false;
     M.houses.forEach(function (h) { HOUSE[h.id] = h; });
 
+    var hour = sydneyHour();
     S = {
-      mode: 'dusk', from: null, fade: 1,
-      lit: {}, flicker: {},
-      mac: { x: 159, dir: -1, state: 'idle', t: 0.6, carrying: true, job: null, then: null, target: 0, anim: 0, hurry: false },
-      switchOn: false, flicks: [],
+      mode: (hour >= 19 || hour < 5) ? 'night' : 'dusk', from: null, fade: 1,
+      mains: reduceMotion, offFor: 0, flicks: [], toldOff: false,
+      house: {}, flicker: {}, wait: {},
+      mac: { x: 159, dir: -1, state: 'idle', t: 1.2, carry: null, want: null, job: null, then: null, target: 0, anim: 0, hurry: false },
       storm: null, saved: null,
-      sound: false,
       possum: { x: 236, dir: -1, goal: 236, timer: rand(18, 30) },
       bats: [], bolts: [], flash: 0, rain: [], sparks: [], zs: [],
       ute: { flash: 0 },
-      priority: null, allLitFor: 0, taps: 0,
+      priority: null, eventT: rand(5, 8), taps: 0,
       asleep: false, wakeT: 0,
       bubble: null
     };
-    M.houses.forEach(function (h) { S.lit[h.id] = (h.id === 'qld' || h.id === 'shop'); });
+    // Who needs what when the page opens: a blown globe and no aircon at the
+    // fibro, no aircon at the brick house, and the units' aircon playing up.
+    var month = sydneyMonth();
+    var season = month >= 11 || month <= 3 ? 'cool' : (month >= 5 && month <= 8 ? 'warm' : null);
+    var mixed = { fibro: 'cool', qld: 'cool', brick: 'warm', shop: 'cool', units: 'warm' };
+    M.houses.forEach(function (h) {
+      S.house[h.id] = { light: 'ok', off: false, ac: 'ok', air: season || mixed[h.id] || 'cool' };
+    });
+    S.house.fibro.light = 'blown';
+    S.house.fibro.ac = 'none';
+    S.house.brick.ac = 'none';
+    S.house.units.ac = 'fault';
+
     for (var i = 0; i < 6; i++) S.bats.push({ x: rand(0, M.world.w), y: rand(8, 30), vx: rand(5, 11), ph: rand(0, 1) });
     for (var j = 0; j < 170; j++) S.rain.push({ x: rand(0, M.world.w + 40), y: rand(-20, M.world.h) });
 
-    try { S.sound = localStorage.getItem('mgr-sound') === 'on'; } catch (e) {}
-    syncSoundBtn();
-
-    // 2am: Mac's asleep in his swag. The phone wakes him. He answers.
-    var hour = sydneyHour();
+    // 2am: Mac's asleep in his swag, the street's lights are off (aircons
+    // humming). Any tap rings his phone. He answers.
     if (hour >= 0 && hour < 5) {
       S.asleep = true;
       S.mode = 'night';
-      S.switchOn = true;
-      M.houses.forEach(function (h) { S.lit[h.id] = false; });
+      S.mains = true;
+      M.houses.forEach(function (h) { S.house[h.id].off = true; });
       S.mac.state = 'sleep';
       S.mac.x = 150;
-      S.mac.carrying = false;
       setText('[data-hud-place]', 'Woopi · ' + sydneyTime());
-      switchBtn.setAttribute('aria-pressed', 'true');
-      switchLabel.textContent = 'Street’s on';
       setTip('Shh. Mac’s asleep.');
     } else {
-      setTip(finePointer ? 'Click a house' : 'Tap a house');
+      setTip(S.mains ? TAP + ' a house' : 'Flick the main switch');
     }
+    syncSwitch();
 
     resize();
     camX = camTarget();
@@ -128,10 +151,19 @@
     kick();
   }
 
-  function sydneyHour() {
+  function sydneyPart(opts) {
     try {
-      return parseInt(new Intl.DateTimeFormat('en-AU', { timeZone: 'Australia/Sydney', hour: 'numeric', hourCycle: 'h23' }).format(new Date()), 10);
-    } catch (e) { return new Date().getHours(); }
+      opts.timeZone = 'Australia/Sydney';
+      return parseInt(new Intl.DateTimeFormat('en-AU', opts).format(new Date()), 10);
+    } catch (e) { return NaN; }
+  }
+  function sydneyHour() {
+    var h = sydneyPart({ hour: 'numeric', hourCycle: 'h23' });
+    return isNaN(h) ? new Date().getHours() : h;
+  }
+  function sydneyMonth() {
+    var m = sydneyPart({ month: 'numeric' });
+    return isNaN(m) ? new Date().getMonth() + 1 : m;
   }
   function sydneyTime() {
     try {
@@ -181,22 +213,79 @@
   }
   function redraw() { if (!raf) draw(); }
 
+  /* --------------------------------------------------------- house state */
+  function hs(id) { return S.house[id]; }
+  function powered() { return S.mains; }
+  function lightOn(id) { var h = hs(id); return powered() && h.light === 'ok' && !h.off; }
+  function acRunning(id) { return powered() && hs(id).ac === 'ok'; }
+  // The next thing Mac has to do at a house, if anything.
+  function jobAt(id) {
+    var h = hs(id);
+    if (h.light === 'storm') return 'storm';
+    if (S.storm) return null;
+    if (h.light === 'blown') return 'globe';
+    if (h.ac === 'none') return 'install';
+    if (h.ac === 'fault') return 'service';
+    return null;
+  }
+  function needs(kind) { return kind === 'globe' ? 'globe' : kind === 'install' ? 'box' : null; }
+  function jobs() { return M.houses.filter(function (h) { return jobAt(h.id); }); }
+  function nearestJob(x, side) {
+    var best = null, bd = 1e9;
+    jobs().forEach(function (h) {
+      if (side && Math.sign(h.door - x) !== side) return;
+      var d = Math.abs(h.door - x);
+      if (d < bd) { bd = d; best = h; }
+    });
+    return best;
+  }
+  function flick(id) { if (!reduceMotion) S.flicker[id] = 0.26; }
+
   /* -------------------------------------------------------------- update */
   function update(dt) {
     var mac = S.mac;
+    clock += dt;
     if (S.fade < 1) S.fade = Math.min(1, S.fade + dt / 0.9);
     Object.keys(S.flicker).forEach(function (k) { S.flicker[k] = Math.max(0, S.flicker[k] - dt); });
+    Object.keys(S.wait).forEach(function (k) {
+      if (S.wait[k] <= 0) return;
+      S.wait[k] -= dt;
+      if (S.wait[k] <= 0) flick(k);
+    });
     S.flash = Math.max(0, S.flash - dt * 2.2);
     S.ute.flash = Math.max(0, S.ute.flash - dt);
 
-    // storm clock + lightning
+    // storm clock, lightning, tripped main
     var st = S.storm;
     if (st && !st.over) {
       st.left -= dt;
-      st.next -= dt;
-      if (st.next <= 0) strike();
+      if (st.tripped) {
+        st.trippedFor += dt;
+        var left = Math.ceil(TRIP_LIMIT - st.trippedFor);
+        if (left !== st.shown) { st.shown = left; setTip('Main switch tripped! Flick it · ' + Math.max(0, left)); }
+        if (st.trippedFor >= TRIP_LIMIT) endStorm('blackout');
+      } else {
+        st.next -= dt;
+        st.nextTrip -= dt;
+        if (st.nextTrip <= 0) trip();
+        else if (st.next <= 0) strike();
+      }
       if (st.left <= 0) endStorm('time');
       updateStormHud();
+    }
+
+    // main switch left off: Mac sorts it out himself
+    if (!st && !S.mains && !S.asleep) {
+      S.offFor += dt;
+      if (S.offFor > 5 && mac.then !== 'meter' && mac.job !== 'meter' && (mac.state === 'idle' || mac.state === 'walk')) {
+        mac.job = 'meter';
+        mac.hurry = true;
+        say(S.toldOff ? 'I’ll get it.' : 'Who turned the power off?', 2);
+        S.toldOff = true;
+        goTo(M.meter[0] + 2, 'meter');
+      }
+    } else {
+      S.offFor = 0;
     }
 
     // Mac
@@ -209,12 +298,13 @@
         break;
       case 'work':
         mac.t -= dt;
-        if (Math.random() < dt * 40) spark(mac.job);
+        mac.anim += dt;
+        if (Math.random() < dt * 30) spark(mac.job);
         if (mac.t <= 0) finishWork();
         break;
       case 'pickup':
         mac.t -= dt;
-        if (mac.t <= 0) { mac.carrying = true; sound('thunk'); if (mac.job) goTo(HOUSE[mac.job].door, 'work'); else rest(1); }
+        if (mac.t <= 0) { mac.carry = mac.want; mac.want = null; rest(0); }
         break;
       case 'sleep':
         if (Math.random() < dt * 1.2) S.zs.push({ x: mac.x - 6, y: M.world.path - 9, t: 2.2 });
@@ -227,19 +317,13 @@
         break;
       default: // idle
         mac.t -= dt;
-        if (mac.t <= 0 && !st) think(dt);
+        if (mac.t <= 0) think();
     }
 
-    // all-lit boredom: eventually somebody switches something off
-    if (!st && !S.asleep && allLit()) {
-      S.allLitFor += dt;
-      if (S.allLitFor > 9 && mac.state === 'idle') {
-        S.allLitFor = 0;
-        var h = pick(M.houses);
-        setLit(h.id, false);
-      }
-    } else {
-      S.allLitFor = 0;
+    // a quiet street doesn't stay quiet: a globe blows or an aircon plays up
+    if (!st && !S.asleep && S.mains && !jobs().length && (mac.state === 'idle' || mac.then === 'stroll')) {
+      S.eventT -= dt;
+      if (S.eventT <= 0) { S.eventT = rand(6, 10); randomEvent(); }
     }
 
     // possum
@@ -275,54 +359,58 @@
     if (st && !st.over) updateEdges();
   }
 
-  function allLit() { return M.houses.every(function (h) { return S.lit[h.id]; }); }
-  function darkHouses() { return M.houses.filter(function (h) { return !S.lit[h.id]; }); }
-  function nearestDark(x, side) {
-    var best = null, bd = 1e9;
-    darkHouses().forEach(function (h) {
-      if (side && Math.sign(h.door - x) !== side) return;
-      var d = Math.abs(h.door - x);
-      if (d < bd) { bd = d; best = h; }
-    });
-    return best;
-  }
-
   function goTo(x, then) {
     var mac = S.mac;
     mac.target = clamp(x, 8, M.world.w - 8);
     mac.then = then;
     mac.state = 'walk';
   }
-  function rest(t) { S.mac.state = 'idle'; S.mac.t = t; S.mac.hurry = false; }
+  function rest(t) { S.mac.state = 'idle'; S.mac.t = t; S.mac.then = null; }
 
   function think() {
     var mac = S.mac;
-    var job = null;
-    if (S.priority && !S.lit[S.priority]) job = HOUSE[S.priority];
+    if (S.asleep) return;
+    if (mac.job === 'meter') { goTo(M.meter[0] + 2, 'meter'); return; }
+    var h = null;
+    if (S.priority && jobAt(S.priority)) h = HOUSE[S.priority];
     S.priority = null;
-    if (!job) job = nearestDark(mac.x);
-    if (job) {
-      mac.job = job.id;
-      if (!mac.carrying && !mac.hurry) goTo(M.ute.x + 62, 'pickup');   // fetch a unit from the ute
-      else goTo(job.door, 'work');
-    } else {
-      if (Math.random() < 0.4) goTo(rand(40, M.world.w - 40), 'idle');
-      else rest(rand(3, 6));
+    if (!h && mac.job && jobAt(mac.job)) h = HOUSE[mac.job];
+    if (!h) h = nearestJob(mac.x);
+    if (h) {
+      var kind = jobAt(h.id), want = needs(kind);
+      mac.job = h.id;
+      if (want && mac.carry !== want) { mac.want = want; goTo(M.ute.x + 62, 'pickup'); }   // back to the ute for parts
+      else goTo(h.door, 'work');
+      return;
     }
+    mac.job = null;
+    mac.hurry = false;
+    if (S.storm) { rest(0.1); return; }
+    if (Math.random() < 0.4) goTo(rand(40, M.world.w - 40), 'stroll');
+    else rest(rand(3, 6));
   }
 
   function arrive() {
-    var mac = S.mac;
-    if (mac.then === 'pickup') { mac.state = 'pickup'; mac.t = 0.6; return; }
-    if (mac.then === 'work') {
-      if (mac.job && !S.lit[mac.job]) {
+    var mac = S.mac, then = mac.then;
+    mac.then = null;
+    if (then === 'pickup') { mac.state = 'pickup'; mac.t = 0.6; return; }
+    if (then === 'meter') {
+      mac.state = 'work';
+      mac.t = 0.6;
+      mac.dir = 1;
+      return;
+    }
+    if (then === 'work') {
+      var kind = mac.job && jobAt(mac.job);
+      if (kind) {
         mac.state = 'work';
-        mac.t = S.storm ? 0.45 : 1.3;
+        mac.kind = kind;
+        mac.t = { storm: 0.45, globe: 1.2, install: 1.8, service: 1.4 }[kind];
+        mac.anim = 0;
         mac.dir = 1;
         return;
       }
-      mac.job = null;
-      rest(0.3);
+      rest(0.2);
       return;
     }
     rest(rand(2, 4));
@@ -330,42 +418,73 @@
 
   function finishWork() {
     var mac = S.mac;
-    var id = mac.job;
-    mac.job = null;
-    mac.hurry = false;
-    if (id) {
-      setLit(id, true);
-      sound('fix');
-    }
-    if (S.storm && !S.storm.over) {
-      S.storm.score++;
-      var next = S.storm.queued;
-      S.storm.queued = null;
-      if (next && !S.lit[next]) { mac.job = next; goTo(HOUSE[next].door, 'work'); return; }
-      rest(0.1);
+    if (mac.job === 'meter') {
+      mac.job = null;
+      mac.hurry = false;
+      setMains(true);
+      say('Power’s back on.', 1.8);
+      rest(0.8);
       return;
     }
-    mac.carrying = false;
-    rest(0.9);
+    var id = mac.job, kind = mac.kind, h = id && hs(id);
+    mac.job = null;
+    mac.kind = null;
+    if (h) {
+      if (kind === 'storm') { h.light = 'ok'; flick(id); }
+      if (kind === 'globe') { h.light = 'ok'; h.off = false; flick(id); mac.carry = null; }
+      if (kind === 'install') { h.ac = 'ok'; mac.carry = null; burst(HOUSE[id].cond[0] + 2, HOUSE[id].cond[1] + 2, 10); if (S.mains && Math.random() < 0.6) say(h.air === 'warm' ? 'Nice and toasty.' : 'Nice and cool.', 1.6); }
+      if (kind === 'service') { h.ac = 'ok'; }
+    }
+    if (S.storm && !S.storm.over) {
+      if (kind === 'storm') S.storm.score++;
+      var next = S.storm.queued;
+      S.storm.queued = null;
+      if (next && jobAt(next)) { mac.job = next; goTo(HOUSE[next].door, 'work'); return; }
+      rest(0.05);
+      return;
+    }
+    mac.hurry = false;
+    rest(jobs().length ? 0.4 : 1.2);
+    redraw();
+  }
+
+  function randomEvent() {
+    var candidates = [];
+    M.houses.forEach(function (h) {
+      var x = hs(h.id);
+      if (x.light === 'ok' && !x.off) candidates.push([h.id, 'globe']);
+      if (x.ac === 'ok') candidates.push([h.id, 'ac']);
+    });
+    if (!candidates.length) return;
+    var c = pick(candidates), h = HOUSE[c[0]];
+    if (c[1] === 'globe') {
+      hs(c[0]).light = 'blown';
+      var r = h.rooms[0];
+      burst(r[0] + r[2] / 2, r[1] + 4, 8);
+      flick(c[0]);
+    } else {
+      hs(c[0]).ac = 'fault';
+    }
+    redraw();
   }
 
   function spark(id) {
-    var h = HOUSE[id];
-    if (!h) return;
-    S.sparks.push({
-      x: Math.round(rand(h.x + 4, h.x + h.w - 4)),
-      y: Math.round(rand(h.y + 2, h.y + h.h - 8)),
-      t: rand(0.15, 0.35),
-      c: pick(['#FFF1C2', '#F5B83D', '#FFFFFF', '#86CDEE'])
-    });
+    var mac = S.mac, x, y;
+    if (id === 'meter') { x = M.meter[0] + rand(0, 6); y = M.meter[1] + rand(1, 8); }
+    else {
+      var h = HOUSE[id];
+      if (!h) return;
+      if (mac.kind === 'install') { x = h.cond[0] + rand(-1, 7); y = h.cond[1] + rand(-1, 5); }
+      else if (mac.kind === 'service') { var u = pick(h.heads); x = u[0] + rand(0, 8); y = u[1] + rand(0, 4); }
+      else if (mac.kind === 'globe') { var r = pick(h.rooms); x = r[0] + rand(4, r[2] - 4); y = r[1] + rand(1, 7); }
+      else { x = rand(h.x + 4, h.x + h.w - 4); y = rand(h.y + 2, h.y + h.h - 8); }
+    }
+    S.sparks.push({ x: Math.round(x), y: Math.round(y), t: rand(0.15, 0.35), c: pick(['#FFF1C2', '#F5B83D', '#FFFFFF', '#86CDEE']) });
   }
-
-  function setLit(id, on, quiet) {
-    if (S.lit[id] === on) return;
-    S.lit[id] = on;
-    if (!reduceMotion) S.flicker[id] = 0.26;
-    if (!quiet) sound(on ? 'on' : 'off');
-    redraw();
+  function burst(x, y, n) {
+    for (var i = 0; i < n; i++) {
+      S.sparks.push({ x: Math.round(x + rand(-4, 4)), y: Math.round(y + rand(-3, 3)), t: rand(0.2, 0.5), c: pick(['#FFF1C2', '#F5B83D', '#FFFFFF']) });
+    }
   }
 
   function setMode(m) {
@@ -374,6 +493,61 @@
     S.from = S.mode;
     S.mode = m;
     S.fade = 0;
+  }
+
+  /* --------------------------------------------------------- main switch */
+  function setMains(on) {
+    if (S.mains === on) return;
+    S.mains = on;
+    // lights come back one after another, like they do
+    M.houses.forEach(function (h, i) { S.wait[h.id] = on && !reduceMotion ? 0.12 + i * 0.12 : 0; });
+    if (!S.storm && S.taps < 4 && !S.asleep) setTip(on ? TAP + ' a house' : 'Flick the main switch');
+    syncSwitch();
+    redraw();
+    kick();
+  }
+  function syncSwitch() {
+    var tripped = !!(S.storm && S.storm.tripped && !S.storm.over);
+    switchBtn.setAttribute('aria-pressed', String(S.mains));
+    switchBtn.setAttribute('aria-label', 'Main switch: ' + (tripped ? 'tripped, press to reset' : S.mains ? 'on' : 'off'));
+    switchBtn.classList.toggle('is-tripped', tripped);
+    switchLabel.classList.toggle('tape-red', tripped);
+    switchLabel.textContent = tripped ? 'Tripped! Flick it' : S.mains ? 'Main switch · on' : 'Main switch · off';
+  }
+
+  function onSwitch() {
+    var st = S.storm;
+    var now = performance.now();
+    S.flicks = S.flicks.filter(function (t) { return now - t < 6000; });
+    S.flicks.push(now);
+    if (st) {
+      if (st.over) return;
+      if (!st.tripped) { toast('Leave the main on — the storm’s doing enough.'); return; }
+      st.tripped = false;
+      st.trippedFor = 0;
+      st.shown = null;
+      st.next = 0.8;
+      st.nextTrip = rand(8, 11);
+      setMains(true);
+      setTip(TAP + ' the dark houses');
+      track('game_switch', { on: true, storm: true });
+      return;
+    }
+    setMains(!S.mains);
+    track('game_switch', { on: S.mains });
+    if (S.asleep) { ringPhone(); return; }
+    if (S.flicks.length >= 12) {
+      S.flicks = [];
+      S.mac.state = 'look';
+      S.mac.t = 2.2;
+      say('Oi. Easy on the switch.', 2.4);
+    } else if (S.mains && S.mac.state !== 'look') {
+      if (S.mac.job === 'meter') { S.mac.job = null; S.mac.hurry = false; rest(0.6); }
+      if (S.mac.state === 'idle') { S.mac.state = 'wave'; S.mac.t = 1.4; }
+      say('Too easy.', 1.6);
+      if (S.taps < 4) setTip(TAP + ' a house');
+    }
+    draw();
   }
 
   /* -------------------------------------------------------------- storm */
@@ -386,16 +560,23 @@
     q('[data-go]').focus({ preventScroll: true });
   }
 
+  function snapshot() {
+    var h = {};
+    Object.keys(S.house).forEach(function (k) { h[k] = Object.assign({}, S.house[k]); });
+    return { mode: S.mode, mains: S.mains, house: h };
+  }
+
   function startStorm() {
     q('[data-intro]').hidden = true;
     q('[data-results]').hidden = true;
     if (S.asleep) { S.asleep = false; S.mac.state = 'idle'; }
-    if (!S.saved) S.saved = { mode: S.mode, lit: Object.assign({}, S.lit) };
-    S.storm = { left: 30, next: 0.9, score: 0, over: false, queued: null };
+    if (!S.saved) S.saved = snapshot();
+    S.storm = { left: STORM_LEN, next: 0.9, nextTrip: rand(8, 10), score: 0, over: false, queued: null, tripped: false, trippedFor: 0, shown: null };
     setMode('storm');
-    M.houses.forEach(function (h) { S.lit[h.id] = true; });
+    S.mains = true;
+    M.houses.forEach(function (h) { var x = hs(h.id); x.light = 'ok'; x.off = false; });
     var mac = S.mac;
-    mac.job = null; mac.carrying = false; mac.hurry = false;
+    mac.job = null; mac.kind = null; mac.carry = null; mac.want = null; mac.hurry = false;
     rest(0);
     q('[data-hud-place]').hidden = true;
     q('[data-storm]').hidden = true;
@@ -403,34 +584,48 @@
     q('[data-hud-score]').hidden = false;
     q('[data-quit]').hidden = false;
     q('[data-hud-power]').hidden = false;
-    switchBtn.disabled = true;
-    setTip(finePointer ? 'Click the dark houses' : 'Tap the dark houses');
+    syncSwitch();
+    setTip(TAP + ' the dark houses');
     updateStormHud();
     track('game_storm_start');
     kick();
   }
 
-  function strike() {
-    var st = S.storm;
-    var progress = 1 - st.left / 30;
-    st.next = 2.1 - 1.15 * progress + rand(0, 0.5);
-    var mac = S.mac;
-    var targets = M.houses.filter(function (h) { return S.lit[h.id] && !(mac.state === 'work' && mac.job === h.id); });
-    if (!targets.length) return;
-    var h = pick(targets);
-    S.lit[h.id] = false;
-    S.flicker[h.id] = 0;
-    // a jagged bolt from the cloud base down to the roof
-    var x = h.door + rand(-12, 12), y = 0, pts = [[Math.round(x), 0]];
-    var bottom = h.y - 4;
+  function bolt(x, bottom) {
+    var y = 0, pts = [[Math.round(x), 0]];
     while (y < bottom) { y += rand(4, 8); x += rand(-4, 4); pts.push([Math.round(x), Math.round(Math.min(y, bottom))]); }
     S.bolts.push({ pts: pts, t: 0.22 });
     if (!reduceMotion) S.flash = 0.5;
-    sound('thunder');
     if (navigator.vibrate && !reduceMotion) { try { navigator.vibrate(30); } catch (e) {} }
-    if (allDark()) endStorm('blackout');
   }
-  function allDark() { return M.houses.every(function (h) { return !S.lit[h.id]; }); }
+
+  function strike() {
+    var st = S.storm;
+    var progress = 1 - st.left / STORM_LEN;
+    st.next = 2.1 - 1.15 * progress + rand(0, 0.5);
+    var mac = S.mac;
+    var targets = M.houses.filter(function (h) { return hs(h.id).light === 'ok' && !(mac.state === 'work' && mac.job === h.id); });
+    if (!targets.length) return;
+    var h = pick(targets);
+    hs(h.id).light = 'storm';
+    S.flicker[h.id] = 0;
+    bolt(h.door + rand(-12, 12), h.y - 4);
+    if (M.houses.every(function (x) { return hs(x.id).light !== 'ok'; })) endStorm('blackout');
+  }
+
+  // A big one hits the line: the whole street's main switch trips.
+  function trip() {
+    var st = S.storm;
+    st.tripped = true;
+    st.trippedFor = 0;
+    st.shown = null;
+    var pole = pick(M.poles);
+    bolt(pole + 1, 36);
+    if (!reduceMotion) S.flash = 0.9;
+    S.mains = false;
+    syncSwitch();
+    track('game_storm_trip');
+  }
 
   function updateStormHud() {
     var st = S.storm;
@@ -438,7 +633,7 @@
     setText('[data-hud-time] b', '0:' + String(Math.max(0, Math.ceil(st.left))).padStart(2, '0'));
     setText('[data-hud-score] b', String(st.score));
     var pw = q('[data-hud-power]');
-    var n = M.houses.length, on = M.houses.filter(function (h) { return S.lit[h.id]; }).length;
+    var n = M.houses.length, on = M.houses.filter(function (h) { return lightOn(h.id); }).length;
     if (pw.children.length !== n) { pw.innerHTML = ''; for (var i = 0; i < n; i++) pw.appendChild(document.createElement('i')); }
     for (var k = 0; k < n; k++) pw.children[k].className = k < on ? 'on' : '';
   }
@@ -448,10 +643,12 @@
     if (!st || st.over) return;
     st.over = true;
     hideEdges();
+    syncSwitch();
+    setTip('');
     track('game_storm_end', { score: st.score, reason: reason });
     setTimeout(function () {
       var n = st.score;
-      setText('[data-res-tape]', reason === 'blackout' ? 'Blackout! Round over' : 'Storm Night · round over');
+      setText('[data-res-tape]', reason === 'blackout' ? (st.tripped ? 'Blackout! The main stayed off' : 'Blackout! Round over') : 'Storm Night · round over');
       setText('[data-res-score]', String(n));
       var rank = RANKS[0][1], next = null;
       for (var i = 0; i < RANKS.length; i++) {
@@ -469,10 +666,13 @@
     q('[data-results]').hidden = true;
     q('[data-intro]').hidden = true;
     S.storm = null;
-    var saved = S.saved || { mode: 'dusk', lit: {} };
+    var saved = S.saved || { mode: 'dusk', mains: true, house: S.house };
     S.saved = null;
     setMode(saved.mode === 'storm' ? 'dusk' : saved.mode);
-    M.houses.forEach(function (h) { S.lit[h.id] = !!saved.lit[h.id]; });
+    S.house = saved.house;
+    S.mains = saved.mains;
+    var mac = S.mac;
+    mac.job = null; mac.kind = null; mac.carry = null; mac.want = null; mac.hurry = false;
     q('[data-hud-place]').hidden = false;
     q('[data-storm]').hidden = false;
     q('[data-hud-time]').hidden = true;
@@ -480,8 +680,8 @@
     q('[data-quit]').hidden = true;
     q('[data-hud-power]').hidden = true;
     hideEdges();
-    switchBtn.disabled = false;
-    setTip(finePointer ? 'Click a house' : 'Tap a house');
+    syncSwitch();
+    setTip(S.mains ? TAP + ' a house' : 'Flick the main switch');
     rest(0.5);
     redraw();
     kick();
@@ -489,7 +689,8 @@
 
   function updateEdges() {
     var left = 0, right = 0;
-    darkHouses().forEach(function (h) {
+    M.houses.forEach(function (h) {
+      if (hs(h.id).light !== 'storm') return;
       if (h.door < camX + 6) left++;
       else if (h.door > camX + viewW - 6) right++;
     });
@@ -531,7 +732,7 @@
       var n = parseInt(e.key, 10);
       if (n >= 1 && n <= M.houses.length) { e.preventDefault(); tapHouse(M.houses[n - 1]); }
     });
-    switchBtn.addEventListener('click', flick);
+    switchBtn.addEventListener('click', onSwitch);
     q('[data-storm]').addEventListener('click', openIntro);
     q('[data-go]').addEventListener('click', startStorm);
     q('[data-cancel]').addEventListener('click', function () { q('[data-intro]').hidden = true; });
@@ -540,16 +741,10 @@
     q('[data-done]').addEventListener('click', leaveStorm);
     q('[data-share]').addEventListener('click', share);
     q('[data-beat-go]').addEventListener('click', openIntro);
-    q('[data-sound]').addEventListener('click', function () {
-      S.sound = !S.sound;
-      try { localStorage.setItem('mgr-sound', S.sound ? 'on' : 'off'); } catch (e) {}
-      syncSoundBtn();
-      sound('on');
-    });
     Array.prototype.forEach.call(stage.querySelectorAll('[data-edge]'), function (b) {
       b.addEventListener('click', function () {
         var side = parseInt(b.getAttribute('data-edge'), 10);
-        var h = nearestDark(S.mac.x, side);
+        var h = nearestJob(S.mac.x, side);
         if (h) tapHouse(h);
       });
     });
@@ -564,12 +759,11 @@
     var p = S.possum, py = wireY(p.x);
     if (!S.storm && wx > p.x - 3 && wx < p.x + 15 && wy > py - 9 && wy < py + 4) {
       p.goal = p.x < 244 ? 304 : 182;
-      sound('squeak');
       return;
     }
     // Mac
     if (Math.abs(wx - mac.x) < 9 && wy > path - 27 && wy < path + 2 && !S.storm) {
-      if (mac.state === 'idle' || mac.state === 'walk' || mac.state === 'wave') {
+      if (mac.state === 'idle' || mac.state === 'wave' || (mac.state === 'walk' && mac.then === 'stroll')) {
         mac.state = 'wave';
         mac.t = 1.4;
         say(pick(MAC_LINES), 2.2);
@@ -581,9 +775,9 @@
     var u = M.ute;
     if (wx > u.x && wx < u.x + 90 && wy > u.y && wy < u.y + 36) {
       S.ute.flash = 0.6;
-      sound('horn');
       say('Beep beep!', 1.2, 'ute');
       redraw();
+      kick();
       return;
     }
     // a house: anything in its column above the road
@@ -596,60 +790,44 @@
   }
 
   function tapHouse(h) {
-    var mac = S.mac;
+    var mac = S.mac, x = hs(h.id);
     if (S.asleep) { ringPhone(); return; }
     if (S.storm) {
-      if (S.storm.over || S.lit[h.id]) return;
+      if (S.storm.over) return;
+      if (x.light !== 'storm') {
+        if (S.storm.tripped) say('It’s the main, mate. Flick the switch!', 1.8);
+        return;
+      }
       if (mac.state === 'work') { S.storm.queued = h.id; return; }
       mac.job = h.id;
       goTo(h.door, 'work');
       return;
     }
-    if (reduceMotion) { setLit(h.id, !S.lit[h.id]); draw(); return; }
-    if (S.lit[h.id]) { setLit(h.id, false); return; }
-    // dark: send Mac straight there
+    var kind = jobAt(h.id);
+    if (!kind) {
+      // nothing wrong here: it's the residents' own light switch
+      if (!S.mains) { say('Power’s off, mate. Flick the main switch.', 2); return; }
+      x.off = !x.off;
+      flick(h.id);
+      redraw();
+      return;
+    }
+    if (reduceMotion) {
+      if (kind === 'globe') x.light = 'ok';
+      if (kind === 'install' || kind === 'service') x.ac = 'ok';
+      draw();
+      return;
+    }
+    // something needs fixing: Mac makes it his next job
     S.priority = h.id;
-    if (mac.state === 'work' && mac.job !== h.id) return; // he'll come next
-    mac.job = h.id;
     mac.hurry = true;
-    goTo(h.door, 'work');
-  }
-
-  function flick() {
-    if (S.storm) return;
-    S.switchOn = !S.switchOn;
-    switchBtn.setAttribute('aria-pressed', String(S.switchOn));
-    switchLabel.textContent = S.switchOn ? 'Street’s on' : 'Flick it';
-    sound('clunk');
-    track('game_switch', { on: S.switchOn });
-    var now = performance.now();
-    S.flicks = S.flicks.filter(function (t) { return now - t < 6000; });
-    S.flicks.push(now);
-    if (S.flicks.length >= 12 && !S.asleep) {
-      S.flicks = [];
-      S.mac.state = 'look';
-      S.mac.t = 2.2;
-      say('Oi. Easy on the switch.', 2.4);
-    }
-    if (S.asleep) { ringPhone(); return; }
-    setMode(S.switchOn ? 'night' : 'dusk');
-    var on = S.switchOn;
-    M.houses.forEach(function (h, i) {
-      if (reduceMotion) { S.lit[h.id] = on; return; }
-      setTimeout(function () { if (S.switchOn === on && !S.storm) setLit(h.id, on, i > 0); }, 160 + i * 130);
-    });
-    if (on && S.mac.state !== 'look') {
-      S.mac.state = 'wave';
-      S.mac.t = 1.6;
-      say('Too easy.', 1.8);
-    }
-    draw();
-    kick();
+    if (mac.state === 'work' || mac.state === 'pickup' || mac.job === 'meter') return; // he'll come next
+    mac.job = h.id;
+    think();
   }
 
   function ringPhone() {
     if (S.wakeT > 0) return;
-    sound('ring');
     say('Brrring brrring…', 1.4);
     S.wakeT = 1.5;
     kick();
@@ -658,8 +836,8 @@
     S.asleep = false;
     S.mac.state = 'idle';
     S.mac.t = 1.8;
-    say('MGR, Mac speaking.', 2.6);
-    setTip(finePointer ? 'Click a house' : 'Tap a house');
+    say(S.mains ? 'MGR, Mac speaking.' : 'MGR, Mac speaking. Power’s out? On my way.', 2.6);
+    setTip(S.mains ? TAP + ' a house' : 'Flick the main switch');
   }
 
   /* -------------------------------------------------------------- draw */
@@ -678,9 +856,10 @@
     return 40 + 6 * 4 * t * (1 - t);
   }
   function litShown(id) {
+    if (S.wait[id] > 0) return false;
     var f = S.flicker[id];
-    if (f > 0 && Math.floor(f * 26) % 2 === 0) return !S.lit[id];
-    return S.lit[id];
+    if (f > 0 && Math.floor(f * 26) % 2 === 0) return !lightOn(id);
+    return lightOn(id);
   }
   function drawScene(mode) {
     wctx.drawImage(IMG['bg-' + mode], 0, 0);
@@ -688,6 +867,73 @@
     M.houses.forEach(function (h) {
       if (litShown(h.id)) wctx.drawImage(lit, h.x, h.y, h.w, h.h, h.x, h.y, h.w, h.h);
     });
+  }
+
+  function drawPower() {
+    var spin = Math.floor(clock / 0.09) % 2 ? 'condenser-a' : 'condenser-b';
+    M.houses.forEach(function (h, i) {
+      var x = hs(h.id), running = acRunning(h.id);
+      // outdoor unit (none until Mac installs one)
+      if (x.ac !== 'none') sprite(running ? spin : 'condenser', h.cond[0] - 1, h.cond[1] - 1);
+      // head units: blue light + air when running, red flashing light when playing up
+      h.heads.forEach(function (u, k) {
+        if (running) {
+          wctx.fillStyle = '#3FA9E0';
+          wctx.fillRect(u[0] + 7, u[1], 1, 1);
+          wctx.fillStyle = AIR[x.air];
+          for (var s = 0; s < 3; s++) {
+            var ph = (clock * 0.9 + s / 3 + i * 0.37 + k * 0.21) % 1;
+            if (reduceMotion) ph = 0.25 + s * 0.2;
+            wctx.globalAlpha = 1 - ph * 0.6;
+            var ax = u[0] + 1 + s * 3 + (ph > 0.5 ? (s % 2 ? 1 : -1) : 0);
+            wctx.fillRect(Math.round(ax), Math.round(u[1] + 5 + ph * 6), 2, 1);
+          }
+          wctx.globalAlpha = 1;
+        } else if (x.ac === 'fault' && S.mains && Math.floor(clock * 2.5) % 2 === 0) {
+          wctx.fillStyle = '#FF4A3A';
+          wctx.fillRect(u[0] + 7, u[1], 1, 1);
+        }
+      });
+    });
+    // streetlights
+    if (S.mains) {
+      var g = frameRect('glow-street');
+      M.streetlights.forEach(function (l) {
+        sprite('glow-street', l[2] - (g.w - 1) / 2, l[3] - (g.h - 1) / 2);
+        wctx.fillStyle = '#FFE6A0';
+        wctx.fillRect(l[0], l[1], 1, 1);
+      });
+    }
+  }
+
+  function drawIcons() {
+    if (S.asleep) return;
+    var bob = reduceMotion ? 0 : Math.floor(clock * 2) % 2;
+    M.houses.forEach(function (h) {
+      var kind = jobAt(h.id);
+      if (!kind) return;
+      // aircon jobs only make sense to show once there's power to test with
+      if ((kind === 'install' || kind === 'service') && !S.mains) return;
+      var name = kind === 'globe' ? 'icon-globe' : kind === 'storm' ? 'icon-storm' : 'icon-ac';
+      var f = frameRect(name);
+      sprite(name, h.door - (f.w - 1) / 2, h.y - f.h - 3 - bob);
+    });
+  }
+
+  function macSprite() {
+    var mac = S.mac;
+    var step = Math.floor(mac.anim / 0.14) % 2;
+    if (mac.state === 'wave') return 'mac-wave';
+    if (mac.state === 'look') return 'mac-look';
+    if (mac.state === 'work') {
+      var alt = Math.floor(mac.anim / 0.25) % 2;
+      if (mac.kind === 'globe') return alt ? 'mac-bulb' : 'mac-idle';
+      if (mac.kind === 'install') return mac.t > 0.9 ? 'mac-box' : 'mac-idle';
+      return 'mac-idle';
+    }
+    var carry = mac.carry === 'box' ? 'box' : mac.carry === 'globe' ? 'bulb' : '';
+    if (mac.state === 'walk' && step) return carry ? 'mac-' + carry + 'walk' : 'mac-walk';
+    return carry ? 'mac-' + carry : 'mac-idle';
   }
 
   function draw() {
@@ -699,6 +945,7 @@
       drawScene(S.from);
       wctx.globalAlpha = 1;
     }
+    drawPower();
 
     // dusk flying foxes
     if (S.mode === 'dusk') {
@@ -710,7 +957,7 @@
       sprite('possum', p.x, wireY(p.x + 6) - 4, p.dir > 0);
     }
     // torch glow while Mac works in the dark
-    if (mac.state === 'work' && S.mode !== 'dusk' && mac.job) {
+    if (mac.state === 'work' && mac.job && mac.job !== 'meter' && (S.mode !== 'dusk' || !S.mains)) {
       var h = HOUSE[mac.job], g = frameRect('glow-torch');
       sprite('glow-torch', h.door - g.w / 2, h.y + h.h - 22);
     }
@@ -719,13 +966,8 @@
       sprite('swag', mac.x - 14, path - 5);
       sprite('mac-sleep', mac.x - 12, path - 9);
     } else {
-      var name;
-      if (mac.state === 'wave') name = 'mac-wave';
-      else if (mac.state === 'look') name = 'mac-look';
-      else if (mac.state === 'walk') name = Math.floor(mac.anim / 0.14) % 2 ? (mac.carrying ? 'mac-boxwalk' : 'mac-walk') : (mac.carrying ? 'mac-box' : 'mac-idle');
-      else name = mac.carrying ? 'mac-box' : 'mac-idle';
-      var f = frameRect(name);
-      sprite(name, mac.x - f.w / 2, path - f.h, mac.dir < 0 && mac.state !== 'look');
+      var name = macSprite(), f = frameRect(name);
+      sprite(name, mac.x - f.w / 2, path - f.h, mac.dir < 0 && mac.state !== 'look' && mac.state !== 'work');
     }
     // ute, headlights, beacon
     var u = M.ute;
@@ -741,6 +983,7 @@
       wctx.fillStyle = '#F5B83D';
       wctx.fillRect(u.beacon[0] - 1, u.beacon[1] - 1, 3, 2);
     }
+    drawIcons();
     // sparks + zzz
     S.sparks.forEach(function (s) { wctx.fillStyle = s.c; wctx.fillRect(Math.round(s.x), Math.round(s.y), 1, 1); });
     S.zs.forEach(function (z) {
@@ -796,6 +1039,7 @@
     var b = q('[data-bubble]');
     b.textContent = text;
     b.hidden = false;
+    redraw();
     kick();
   }
   function hideBubble() { S.bubble = null; q('[data-bubble]').hidden = true; }
@@ -828,69 +1072,10 @@
     clearTimeout(toastTimer);
     toastTimer = setTimeout(function () { t.hidden = true; }, 2600);
   }
-  function syncSoundBtn() {
-    var b = q('[data-sound]');
-    b.setAttribute('aria-pressed', String(S.sound));
-    b.setAttribute('aria-label', S.sound ? 'Sound on. Turn sound off' : 'Sound off. Turn sound on');
-    b.querySelector('[data-sound-x]').style.display = S.sound ? 'none' : '';
-    var w = b.querySelector('[data-sound-waves]');
-    if (S.sound) w.removeAttribute('hidden'); else w.setAttribute('hidden', '');
-  }
   function track(event, data) {
     window.dataLayer = window.dataLayer || [];
     var o = { event: event };
     if (data) Object.keys(data).forEach(function (k) { o[k] = data[k]; });
     window.dataLayer.push(o);
-  }
-
-  /* ------------------------------------------------------------- sound */
-  var AC = null;
-  function audio() {
-    if (!S || !S.sound) return null;
-    if (!AC) {
-      var C = window.AudioContext || window.webkitAudioContext;
-      if (!C) return null;
-      try { AC = new C(); } catch (e) { return null; }
-    }
-    if (AC.state === 'suspended') AC.resume();
-    return AC;
-  }
-  function tone(ac, freq, dur, type, vol, when, to) {
-    var o = ac.createOscillator(), g = ac.createGain(), t0 = ac.currentTime + (when || 0);
-    o.type = type || 'square';
-    o.frequency.setValueAtTime(freq, t0);
-    if (to) o.frequency.exponentialRampToValueAtTime(to, t0 + dur);
-    g.gain.setValueAtTime(vol, t0);
-    g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
-    o.connect(g).connect(ac.destination);
-    o.start(t0);
-    o.stop(t0 + dur + 0.02);
-  }
-  function noise(ac, dur, vol, freq, when) {
-    var n = Math.floor(ac.sampleRate * dur), buf = ac.createBuffer(1, n, ac.sampleRate), d = buf.getChannelData(0);
-    for (var i = 0; i < n; i++) d[i] = Math.random() * 2 - 1;
-    var s = ac.createBufferSource(), f = ac.createBiquadFilter(), g = ac.createGain(), t0 = ac.currentTime + (when || 0);
-    s.buffer = buf;
-    f.type = 'lowpass';
-    f.frequency.value = freq;
-    g.gain.setValueAtTime(vol, t0);
-    g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
-    s.connect(f).connect(g).connect(ac.destination);
-    s.start(t0);
-  }
-  function sound(name) {
-    var ac = audio();
-    if (!ac) return;
-    switch (name) {
-      case 'clunk': noise(ac, 0.06, 0.35, 1800); tone(ac, 110, 0.08, 'square', 0.06); break;
-      case 'on': tone(ac, 880, 0.05, 'square', 0.03); break;
-      case 'off': tone(ac, 330, 0.06, 'square', 0.03); break;
-      case 'fix': tone(ac, 660, 0.12, 'square', 0.035, 0, 1320); break;
-      case 'thunk': noise(ac, 0.05, 0.25, 600); break;
-      case 'thunder': noise(ac, 1.4, 0.5, 260, 0.15); noise(ac, 0.12, 0.3, 3000); break;
-      case 'horn': tone(ac, 392, 0.16, 'square', 0.05); tone(ac, 494, 0.16, 'square', 0.04); tone(ac, 392, 0.2, 'square', 0.05, 0.22); tone(ac, 494, 0.2, 'square', 0.04, 0.22); break;
-      case 'ring': for (var i = 0; i < 6; i++) tone(ac, i % 2 ? 1000 : 1250, 0.09, 'sine', 0.05, i * 0.1); break;
-      case 'squeak': tone(ac, 1800, 0.08, 'triangle', 0.03, 0, 2600); break;
-    }
   }
 })();

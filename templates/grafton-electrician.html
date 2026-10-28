@@ -1,53 +1,87 @@
 {% extends '_page.html' %}
 {% import '_macros.html' as m %}
 {% block title %}Electrician Grafton | Air Conditioning & 24 Hour | No Travel Fee | MGR Electrical{% endblock %}
-{% block description %}Licensed electrician and air conditioning in Grafton and the Clarence Valley — electrical work, split systems and urgent call-outs. No travel fee for Grafton jobs.{% endblock %}
-{% block eyebrow %}Grafton &amp; the Clarence Valley{% endblock %}
-{% block h1 %}Electrician in Grafton. No travel fee.{% endblock %}
-{% block lede %}Licensed electrical and air conditioning work in Grafton and around the Clarence Valley, plus urgent call-outs. Based on the Coffs Coast, with no travel fee for Grafton jobs.{% endblock %}
+{% block og_title %}Electrician Grafton — MGR Electrical{% endblock %}
+{% block description %}Licensed electrician and air conditioning in Grafton and the Clarence Valley. Electrical work, split system installs and repairs, and urgent call-outs. No travel fee.{% endblock %}
+{% block eyebrow %}Grafton{% endblock %}
+{% block h1 %}Licensed electrician &amp; aircon servicing Grafton.{% endblock %}
+{% block lede %}Electrical, air conditioning and urgent call-outs across Grafton and the Clarence Valley. Coffs Coast based, no extra charge for travel.{% endblock %}
 {% block art %}{{ m.sprite('ute', 3, 'Pixel-art white dual-cab ute with a red ladder and bull bar') }}{% endblock %}
 {% block content %}
 <section class="block" aria-labelledby="what-h">
   <div class="wrap">
-    <div class="block-head"><div class="stack"><span class="tape">What we do</span><h2 id="what-h">Everything a sparky does.</h2></div></div>
+    <div class="block-head">
+      <div class="stack"><span class="tape">Grafton &amp; the Clarence Valley</span><h2 id="what-h">A licensed electrician who comes to Grafton — no travel fee.</h2></div>
+      <p>Mac is based on the Coffs Coast and works in Grafton regularly. You pay for the job, not the drive.</p>
+    </div>
     <div class="grid">
       <article class="card">
         <h3>Electrical</h3>
-        <p>Homes and businesses: power points, lighting, switchboards, safety switches, fault finding, renovations and new circuits — signed off when it’s done.</p>
+        <p>Domestic and commercial electrical work, done properly and signed off.</p>
+        <ul>
+          <li>Power points and lighting</li>
+          <li>Switchboards and safety switches</li>
+          <li>Fault finding</li>
+          <li>Renovations and new circuits</li>
+        </ul>
         <div class="more"><a href="electrical">Electrical services →</a></div>
       </article>
       <article class="card">
         <h3>Air conditioning</h3>
-        <p>Split systems supplied, installed, serviced and repaired. All brands, replacements, or a unit you’ve already bought.</p>
+        <p>Split systems supplied, installed, serviced and repaired — all brands.</p>
+        <ul>
+          <li>New installs and replacements</li>
+          <li>Servicing and repairs</li>
+          <li>Install your own unit</li>
+        </ul>
         <div class="more"><a href="air-conditioning">Air conditioning →</a></div>
       </article>
       <article class="card hot">
-        <h3>Emergencies</h3>
-        <p>24 hour call-outs for power loss, sparking, burning smells or breakers that keep tripping. Make it safe first, then ring — don’t use the form for urgent jobs.</p>
-        <div class="more">{{ m.call_btn('grafton-emergency', 'Call 0434 023 625') }}</div>
+        <h3>Emergencies in Grafton too</h3>
+        <p>Power out, sparking, burning smell, something tripping that won’t reset? Call — urgent jobs in Grafton are taken too.</p>
+        <ul>
+          <li>24 hour urgent call-outs</li>
+          <li>Make it safe first</li>
+          <li>No travel fee</li>
+        </ul>
       </article>
     </div>
   </div>
 </section>
 
-<section class="block raised" aria-labelledby="area-h">
+<section class="block raised" aria-labelledby="urgent-h">
+  <div class="wrap grid">
+    <div class="card hot">
+      <span class="tape">Urgent?</span>
+      <h2 id="urgent-h" style="font-size:2rem">Don’t fill in a form — ring.</h2>
+      <p>If it’s an emergency in Grafton, call Mac directly. If it can wait, send the quote form below and you’ll get a call back.</p>
+      <div class="more">{{ m.call_btn('grafton-call', 'Call 0434 023 625') }}</div>
+    </div>
+    <div class="card">
+      <h3>No extra for Grafton</h3>
+      <p>There’s no travel charge for Grafton jobs. You’ll get the price for the work before it starts.</p>
+    </div>
+  </div>
+</section>
+
+<section class="block" aria-labelledby="area-h">
   <div class="wrap">
     <div class="block-head">
-      <div class="stack"><span class="tape">Jacaranda country</span><h2 id="area-h">Grafton and around.</h2></div>
-      <p>Plus the whole Coffs Coast. You’ll get the price before any work starts.</p>
+      <div class="stack"><span class="tape">Where we work</span><h2 id="area-h">Grafton and the Clarence Valley.</h2></div>
+      <p>Regular work across Grafton and surrounds, plus the whole Coffs Coast.</p>
     </div>
     {{ m.route(['Grafton', 'South Grafton', 'Junction Hill', 'Clarenza', 'Waterview Heights', 'Ulmarra'], home='') }}
   </div>
 </section>
 
-<section class="block" aria-labelledby="faq-h">
+<section class="block raised" aria-labelledby="faq-h">
   <div class="wrap">
     <div class="block-head"><div class="stack"><span class="tape">Common questions</span><h2 id="faq-h">Before you call.</h2></div></div>
     {{ m.faq([
-      ('Do you charge a travel fee to Grafton?', 'No. There’s no travel fee for Grafton jobs.'),
-      ('Do you do emergencies in Grafton?', 'Yes. For anything urgent, ring directly rather than using the form.'),
-      ('Do you do air conditioning in Grafton?', 'Yes — installs, replacements, servicing and repairs.'),
-      ('Are you licensed?', 'Yes, under a NSW electrical contractor licence: 337267C.'),
+      ('Do you charge extra to come to Grafton?', 'No. There’s no travel fee for Grafton jobs.'),
+      ('Do you do emergencies in Grafton?', 'Yes. For anything urgent — power out, sparking, burning smell — call Mac directly rather than using the form.'),
+      ('Do you do air conditioning in Grafton?', 'Yes — installs, replacements, servicing and repairs, all brands.'),
+      ('Are you licensed?', 'Yes. NSW electrical contractor licence 337267C.'),
     ]) }}
   </div>
 </section>

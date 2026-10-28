@@ -1,57 +1,58 @@
 {% extends '_page.html' %}
 {% import '_macros.html' as m %}
 {% block title %}Domestic & Commercial Electrician | Woolgoolga & Coffs Harbour | MGR Electrical{% endblock %}
-{% block description %}Switchboard upgrades, safety switches, LED lighting, fault finding, renovations and commercial fit-outs across Woolgoolga, Coffs Harbour and Grafton. Free quotes — 0434 023 625.{% endblock %}
+{% block og_title %}Electrical Services — MGR Electrical{% endblock %}
+{% block description %}Switchboard upgrades, safety switches, LED lighting, fault finding, renovations and commercial fit-outs across Woolgoolga, Coffs Harbour and Grafton. Free quotes on 0434 023 625.{% endblock %}
 {% block eyebrow %}Domestic &amp; commercial{% endblock %}
-{% block h1 %}Electrical work, done properly.{% endblock %}
-{% block lede %}Repairs, upgrades, new installs and fault finding for homes, shops, offices and sites — from Corindi to Sawtell and out to Grafton.{% endblock %}
+{% block h1 %}Electrical work across the Coffs Coast.{% endblock %}
+{% block lede %}Repairs, upgrades, new installations and fault finding — for homes, shops, offices and sites from Corindi through to Sawtell and out to Grafton.{% endblock %}
 {% block art %}{{ m.sprite('mac-wave', 7, 'Pixel-art Mac giving a wave') }}{% endblock %}
 {% block content %}
 <section class="block" aria-labelledby="home-h">
   <div class="wrap">
     <div class="block-head">
-      <div class="stack"><span class="tape">At home</span><h2 id="home-h">Domestic electrical.</h2></div>
-      {{ m.icon('gpo', 120) }}
+      <div class="stack"><span class="tape">Around the home</span><h2 id="home-h">Domestic electrical.</h2></div>
+      <p>The everyday work that keeps a house safe and running.</p>
     </div>
     <div class="grid">
       <article class="card">
         <h3>Repairs &amp; fault finding</h3>
-        <p>Mac tracks down what’s actually causing the problem instead of swapping parts until it goes away.</p>
+        <p>Something’s stopped working, or keeps tripping. Mac traces the actual cause rather than swapping parts and hoping.</p>
         <ul>
-          <li>Dead power points and light fittings</li>
-          <li>Circuits that keep tripping</li>
+          <li>Power points and light fittings</li>
+          <li>Circuits that trip repeatedly</li>
           <li>Hot water and appliance circuits</li>
           <li>Oven, cooktop and rangehood connections</li>
         </ul>
       </article>
       <article class="card">
         <h3>Safety &amp; switchboards</h3>
-        <p>Older boards and missing safety switches are the most common thing he finds in coastal houses.</p>
+        <p>Older homes on the coast often still run boards that were never designed for the load a modern house puts on them.</p>
         <ul>
           <li>Switchboard upgrades</li>
-          <li>RCD safety switches</li>
-          <li>Smoke alarms supplied and installed</li>
-          <li>Safety checks before you buy or rent out a place</li>
+          <li>Safety switches (RCDs)</li>
+          <li>Smoke alarm supply and installation</li>
+          <li>Safety inspections before you buy or rent out</li>
         </ul>
       </article>
       <article class="card">
         <h3>Lighting</h3>
-        <p>Inside, outside and everything in between.</p>
+        <p>Better light for less power — and it usually pays for itself faster than people expect.</p>
         <ul>
-          <li>LED upgrades and downlight replacements</li>
-          <li>Outdoor, security and sensor lights</li>
-          <li>Deck and garden lighting</li>
+          <li>LED upgrades and downlight replacement</li>
+          <li>Outdoor, security and sensor lighting</li>
+          <li>Deck, garden and entertaining areas</li>
           <li>Ceiling fans</li>
         </ul>
       </article>
       <article class="card">
         <h3>Renovations &amp; new work</h3>
-        <p>Wired right the first time, signed off when it’s done.</p>
+        <p>New builds, extensions, granny flats and sheds — wired properly and signed off.</p>
         <ul>
           <li>Rewires and rough-ins</li>
           <li>Extensions and granny flats</li>
           <li>Sheds, garages and studios</li>
-          <li>Extra circuits and sub-boards</li>
+          <li>Additional circuits and sub-boards</li>
         </ul>
       </article>
     </div>
@@ -61,40 +62,37 @@
 <section class="block raised" aria-labelledby="biz-h">
   <div class="wrap">
     <div class="block-head">
-      <div class="stack"><span class="tape">For business</span><h2 id="biz-h">Commercial electrical.</h2></div>
-      <p>Shops, cafés, offices and sites — same standard as a house, worked around your trading hours.</p>
+      <div class="stack"><span class="tape">Shops, offices &amp; sites</span><h2 id="biz-h">Commercial electrical.</h2></div>
+      <p>Fit-outs, maintenance and repairs for local business — scheduled around trading hours where it matters.</p>
     </div>
     <div class="grid">
       <article class="card">
         <h3>Fit-outs</h3>
-        <p>Power, lighting and data for a new shop, café or office.</p>
+        <p>New shop, cafe or office — power, lighting and data set out to suit how the space actually gets used.</p>
       </article>
       <article class="card">
         <h3>Maintenance</h3>
-        <p>Ongoing repairs and replacements, scheduled around trading hours where possible.</p>
+        <p>Ongoing repairs and replacements so small faults don’t turn into a day with the doors shut.</p>
       </article>
       <article class="card">
-        <h3>Three-phase &amp; equipment</h3>
-        <p>Connections for machinery and equipment, plus the circuits and boards to run them.</p>
+        <h3>Three phase &amp; equipment</h3>
+        <p>Machinery and equipment connections, plus the circuits and boards to support them.</p>
       </article>
     </div>
-  </div>
-</section>
-
-<section class="block" aria-labelledby="unsure-h">
-  <div class="wrap">
-    <div class="card hot" style="max-width:760px">
-      <h3 id="unsure-h">Not sure you need a sparky?</h3>
-      <p>Ring and describe it. Mac will tell you straight whether it’s a job for him or something you can sort yourself.</p>
-      <div class="more">{{ m.call_btn('unsure', 'Call Mac · 0434 023 625') }}</div>
+    <div class="card hot" style="margin-top:16px;max-width:760px">
+      <p>Not sure if it’s a job for a sparky? Ring and describe it. If it’s something you can sort yourself, Mac will tell you that.</p>
     </div>
   </div>
 </section>
 
-<section class="block raised" aria-labelledby="area-h">
+<section class="block" aria-labelledby="area-h">
   <div class="wrap">
-    <div class="block-head"><div class="stack"><span class="tape">Where we work</span><h2 id="area-h">Woolgoolga, the Coffs Coast and Grafton.</h2></div></div>
+    <div class="block-head">
+      <div class="stack"><span class="tape">Service area</span><h2 id="area-h">Where we work.</h2></div>
+      <p>Based in Woolgoolga, working right along the Coffs Coast and inland to Grafton.</p>
+    </div>
     {{ m.route(m.COAST, inland=['Grafton']) }}
+    <div class="btn-row" style="margin-top:24px">{{ m.call_btn('areas-call', 'Call 0434 023 625') }}</div>
   </div>
 </section>
 {% endblock %}

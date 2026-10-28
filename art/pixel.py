@@ -374,10 +374,14 @@ LIT_WALL2 = '#E2BD72'
 LIT_FLOOR = '#A8774A'
 
 
-def room(cv, x, y, w, h, lit, pal, kind, ac_on=None):
-    """x,y = interior top-left; draws back wall, floor, furniture, lights."""
-    if ac_on is None:
-        ac_on = lit
+# When export_game sets this to a list, room() records every split-system head
+# unit it draws as (x, y), so the game can animate them.
+AC_HEADS = None
+
+
+def room(cv, x, y, w, h, lit, pal, kind, ac_on=False):
+    """x,y = interior top-left; draws back wall, floor, furniture, lights.
+    ac_on bakes the head unit's LED and air in; the game draws those live."""
     if lit:
         cv.rect(x, y, w, h, LIT_WALL)
         cv.rect(x, y + h - 2, w, 2, LIT_FLOOR)
@@ -392,6 +396,8 @@ def room(cv, x, y, w, h, lit, pal, kind, ac_on=None):
     ux = x + w - 10 if kind != 'bed' else x + 2
     cv.rect(ux, y + 2, 8, 2, '#F2F1EC' if lit else '#3A3E56')
     cv.hl(ux, y + 4, 8, '#BDBDB8' if lit else '#2A2E44')
+    if AC_HEADS is not None:
+        AC_HEADS.append((ux, y + 2))
     if ac_on:
         cv.px(ux + 7, y + 2, '#3FA9E0')
         for k in range(3):

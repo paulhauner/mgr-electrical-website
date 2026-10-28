@@ -1,41 +1,57 @@
 {% extends '_page.html' %}
 {% import '_macros.html' as m %}
 {% block title %}Storm Damage Electrician Coffs Harbour | Surge Protection & Generator Inlets | MGR Electrical{% endblock %}
-{% block description %}Storm damage electrician for Woolgoolga, Coffs Harbour and Grafton: wet wiring and switchboards, insurance reports, surge protection, generator inlets and safety switches. 0434 023 625.{% endblock %}
-{% block eyebrow %}Storm damage{% endblock %}
+{% block og_title %}Storm Damage Electrician — MGR Electrical{% endblock %}
+{% block description %}Storm damage electrician for Woolgoolga, Coffs Harbour and Grafton. Wet wiring and switchboards made safe, insurance reports, surge protection, generator inlets and safety switches. Call 0434 023 625.{% endblock %}
+{% block hero_cta %}storm-hero-call{% endblock %}
+{% block eyebrow %}Storm season{% endblock %}
 {% block h1 %}Storm damage electrician, Coffs Coast.{% endblock %}
-{% block lede %}Making storm-damaged wiring and switchboards safe, fixing them, writing reports for your insurer, and getting your place ready for the next one. Day and night call-outs.{% endblock %}
+{% block lede %}Storm-damaged wiring and switchboards made safe and repaired, reports for your insurer, and your home set up for the next one — surge protection, generator inlets and safety switches.{% endblock %}
+{% block subnav %}
+<ul class="ticks" style="margin-top:6px">
+  <li>Storm call-outs, day and night</li>
+  <li>Reports for insurance claims</li>
+  <li>Licensed &amp; insured</li>
+  <li>Woolgoolga, Coffs Harbour &amp; Grafton</li>
+</ul>
+{% endblock %}
 {% block art %}{{ m.sprite('ute', 3, 'Pixel-art white dual-cab ute with a red ladder and bull bar') }}{% endblock %}
 {% block content %}
-<section class="block" aria-labelledby="lines-h">
+<section class="block" aria-label="Powerlines down">
   <div class="wrap">
+    {# Third-party numbers are deliberately not tel: links. Google's call-tracking
+       swap rewrites every tel: link on the page to the forwarding number, and
+       the phone_click event would count a call to Essential Energy as a lead. #}
     <div class="alert" style="max-width:860px">
-      <h2 id="lines-h" style="font-size:1.7rem">Powerlines down?</h2>
-      <p><strong>Keep well back and call Essential Energy on <a href="tel:132080">13 20 80</a>.</strong> The street lines, the pole and the line to your house belong to the network — no electrician can touch them until they’ve been made safe.</p>
-      <p>For trees down, roof damage or flooding, call the SES on <a href="tel:132500">132 500</a>. If anyone’s in danger or there’s a fire, call 000 first.</p>
+      <p><strong>Powerlines down? Stay at least 8 metres away and call Essential Energy on 13 20 80.</strong></p>
+      <p>Lines in the street, the pole and the service line to your house belong to the network — an electrician can’t touch them until they’re made safe.</p>
+      <p>Trees on the house, roof damage or flooding: SES on 132 500. If anyone is in danger or there’s fire: 000 first.</p>
     </div>
   </div>
 </section>
 
 <section class="block" style="padding-top:0" aria-labelledby="after-h">
   <div class="wrap">
-    <div class="block-head"><div class="stack"><span class="tape">After the storm</span><h2 id="after-h">Your side of the meter.</h2></div></div>
+    <div class="block-head">
+      <div class="stack"><span class="tape">After the storm</span><h2 id="after-h">When the damage is on your side of the meter.</h2></div>
+      <p>If the street has power and you don’t, or water has got into anything electrical, that’s Mac’s job.</p>
+    </div>
     <div class="grid">
       <article class="card hot">
         <h3>Water in the switchboard or wiring</h3>
-        <p>Stay clear, don’t reset anything, and call. Wet wiring has to be tested before the power goes back on.</p>
+        <p>Rain through the roof, a flooded garage, water in light fittings. Stay clear, don’t reset anything, and ring. Wet wiring needs testing before it’s switched back on.</p>
       </article>
       <article class="card">
-        <h3>Only your place is out</h3>
-        <p>Or a safety switch keeps tripping. When the street has power and you don’t, the fault is usually inside your property.</p>
+        <h3>Power out — but only at your place</h3>
+        <p>If the neighbours have power and you don’t, or a safety switch keeps tripping since the storm, the fault is usually inside your property.</p>
       </article>
       <article class="card">
-        <h3>Damaged meter box, power or lights</h3>
-        <p>Outdoor power points, lights and cabling are made safe first, then repaired and signed off.</p>
+        <h3>Storm-damaged meter box, wiring or fittings</h3>
+        <p>Damaged meter boxes, outdoor powerpoints, lights and cabling made safe first, then repaired properly and signed off.</p>
       </article>
       <article class="card">
-        <h3>Insurance reports</h3>
-        <p>Mac can document the damage, what caused it and what the repair involves, for your insurer.</p>
+        <h3>Reports for your insurance claim</h3>
+        <p>Mac can write up what was damaged, what caused it and what the repair involves, so you’ve got what the insurer asks for.</p>
       </article>
     </div>
   </div>
@@ -43,38 +59,53 @@
 
 <section class="block raised" aria-labelledby="before-h">
   <div class="wrap">
-    <div class="block-head"><div class="stack"><span class="tape">Before the next one</span><h2 id="before-h">Get ready for storm season.</h2></div></div>
+    <div class="block-head">
+      <div class="stack"><span class="tape">Before the storm</span><h2 id="before-h">Get ready before the next one.</h2></div>
+      <p>Storm season on the Coffs Coast runs through spring and summer. These are worth sorting while the sky’s still blue.</p>
+    </div>
     <div class="grid">
       <article class="card">
         <h3>Surge protection</h3>
-        <p>Fitted at the switchboard, it helps protect TVs, computers and the aircon from surges.</p>
+        <p>A surge protection device fitted at the switchboard helps protect TVs, computers, appliances and aircon from power surges during storms and when the power comes back on.</p>
       </article>
       <article class="card">
         <h3>Generator inlet</h3>
-        <p>An inlet with a changeover switch lets you run the house, or the circuits that matter, safely off a generator through a long outage.</p>
+        <p>A generator inlet and changeover switch lets you run the house — or the circuits that matter — from a portable generator during a long outage, safely and legally.</p>
       </article>
       <article class="card">
-        <h3>Safety switches &amp; board upgrades</h3>
-        <p>Checking every circuit is properly protected before you need it to be.</p>
+        <h3>Safety switch check</h3>
+        <p>Safety switches tested, and older boards upgraded so every circuit is protected. They’re what cuts the power fast when water gets where it shouldn’t.</p>
       </article>
-    </div>
-    <div class="alert" style="max-width:860px;margin-top:16px">
-      <h3>Never run a generator through a power point.</h3>
-      <p>Back-feeding through a power point can put line workers in danger and damage the wiring and the generator. The safe way is a generator inlet with a changeover switch, installed by a licensed electrician.</p>
     </div>
   </div>
 </section>
 
-<section class="block" aria-labelledby="faq-h">
+<section class="block" aria-labelledby="gen-h">
+  <div class="wrap grid">
+    <div class="alert">
+      <span class="tape tape-amber">Running a generator?</span>
+      <h2 id="gen-h" style="font-size:2rem">Never plug it into a powerpoint.</h2>
+      <p>Back-feeding a generator through a powerpoint with a double-ended lead can send power back out into the street and kill a line worker fixing the outage. It can also damage your wiring and the generator.</p>
+      <p>The safe way is a generator inlet with a changeover switch, installed by a licensed electrician.</p>
+    </div>
+    <div class="card hot">
+      <span class="tape">Storm emergency?</span>
+      <p>Don’t fill in a form — ring. Storm call-outs are taken day and night, and you’ll be told what you’re up for before work starts.</p>
+      <div class="more">{{ m.call_btn('storm-callout-call', 'Call 0434 023 625') }}</div>
+    </div>
+  </div>
+</section>
+
+<section class="block raised" aria-labelledby="faq-h">
   <div class="wrap">
-    <div class="block-head"><div class="stack"><span class="tape">Common questions</span><h2 id="faq-h">Before you call.</h2></div></div>
+    <div class="block-head"><div class="stack"><span class="tape">Common questions</span><h2 id="faq-h">Storms and your power.</h2></div></div>
     {{ m.faq([
-      ('Who do I call for powerlines down?', 'Essential Energy on <a href="tel:132080">13 20 80</a> — or 000 if anyone is in danger.'),
-      ('The power’s back but something isn’t working?', 'Call if a circuit is still dead, a safety switch won’t reset, or appliances stopped working after the storm.'),
-      ('Does surge protection stop lightning damage?', 'It reduces damage from surges, but nothing fully protects against a direct strike. Unplugging expensive gear when a storm is close is still a good idea.'),
-      ('Can I run a generator through a power point?', 'No. It’s dangerous and not allowed. Use a generator inlet with a changeover switch.'),
-      ('Can you write an insurance report?', 'Yes, once Mac has inspected the damage.'),
-      ('Do you come out at night?', 'Yes, day and night.'),
+      ('Who do I call if powerlines are down?', 'Essential Energy on 13 20 80 — and 000 if anyone is in danger. Stay at least 8 metres away and keep others back. Once the network side is safe, Mac can sort anything on your side of the meter.'),
+      ('The power came back on but something’s not working. Is that you?', 'Yes. Dead circuits, a safety switch that won’t reset, or appliances that stopped after the storm are all worth a call.'),
+      ('Will surge protection stop lightning damage?', 'It helps a lot with surges from storms and the power coming back on, which is where most damage comes from. Nothing gives full protection against a direct lightning strike, so it’s still worth unplugging expensive gear when a big storm is close.'),
+      ('Can I just run my generator through a powerpoint?', 'No. It’s illegal and dangerous — it can back-feed into the network. A generator inlet with a changeover switch is the safe way to do it.'),
+      ('Can you write a report for my insurance company?', 'Yes. Mac can inspect the damage and provide a written report for your claim.'),
+      ('Do you come out after a storm at night?', 'Yes — call 0434 023 625. Storm call-outs are taken day and night across Woolgoolga, Coffs Harbour and Grafton.'),
     ]) }}
   </div>
 </section>

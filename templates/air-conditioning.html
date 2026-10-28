@@ -1,6 +1,7 @@
 {% extends '_page.html' %}
 {% import '_macros.html' as m %}
 {% block title %}Air Conditioning Installation & Service | Coffs Coast | MGR Electrical{% endblock %}
+{% block og_title %}Air Conditioning — MGR Electrical{% endblock %}
 {% block description %}Split system air conditioning supplied, installed, serviced and repaired across Woolgoolga, the Coffs Coast and Grafton. Licensed electrician — one trade for the whole job.{% endblock %}
 {% block eyebrow %}Split systems{% endblock %}
 {% block h1 %}Air conditioning, supplied and installed.{% endblock %}
@@ -12,7 +13,7 @@
   <div class="wrap">
     <div class="block-head">
       <div class="stack"><span class="tape">What we do</span><h2 id="size-h">Cooling that’s sized right.</h2></div>
-      <p>The most common mistake with air conditioning is buying the wrong size. Too small and it runs flat out; too big and it short-cycles and costs more to run.</p>
+      <p>The most common mistake with air conditioning is buying the wrong size unit. Too small and it runs flat out; too big and it short-cycles and costs more to run.</p>
     </div>
     <div class="grid">
       <article class="card">
@@ -54,12 +55,14 @@
   <div class="wrap grid">
     <div class="card cool">
       <span class="tape tape-cool">Worth knowing</span>
-      <h3 id="heat-h">Book before the heat, not during it.</h3>
-      <p>Every summer the first proper hot week arrives and every sparky on the Coffs Coast is booked out for a fortnight. If your unit struggled last summer, get it sorted before the next one. Same job, no waiting.</p>
+      <h2 id="heat-h" style="font-size:2rem">Book before the heat, not during it.</h2>
+      <p>Every summer the same thing happens on the coast — the first proper hot week arrives and every sparky on the Coffs Coast is booked out for a fortnight.</p>
+      <p>If your unit struggled last summer, spring is the time to sort it. Same job, no waiting.</p>
+      <div class="more">{{ m.call_btn('aircon-call', 'Call 0434 023 625') }}</div>
     </div>
     <div class="card">
       <h3>Getting a quote</h3>
-      <p>Handy to have ready: the room size, whether there’s an existing unit, and roughly where you’d want it mounted. Photos help. Quotes are free.</p>
+      <p>Handy things to have ready: the room size, whether there’s an existing unit, and roughly where you’d want it mounted. Photos help. Quotes are free.</p>
       <div class="more"><a href="#quote">Ask for a quote →</a></div>
     </div>
   </div>

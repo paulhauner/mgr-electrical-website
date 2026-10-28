@@ -8,8 +8,10 @@
       <h1>{% block h1 %}{% endblock %}</h1>
       <p class="lede">{% block lede %}{% endblock %}</p>
       <div class="btn-row" data-hero-cta>
-        {{ m.call_btn('hero', 'Call 0434 023 625') }}
-        <a class="btn btn-ghost" href="#quote">Free quote</a>
+        {% block hero_buttons %}
+        {{ m.call_btn(self.hero_cta(), 'Call 0434 023 625') }}
+        <a class="btn btn-ghost" href="#quote">Get a free quote</a>
+        {% endblock %}
       </div>
       {% block subnav %}{% endblock %}
     </div>
@@ -18,3 +20,4 @@
 </section>
 {% block content %}{% endblock %}
 {% endblock %}
+{% block hero_cta %}hero-call{% endblock %}

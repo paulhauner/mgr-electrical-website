@@ -4,9 +4,14 @@
 
 Writes, at 1x (the browser scales up with nearest-neighbour):
   bg-<mode>.png / lit-<mode>.png   the street with every house dark / lit,
-                                   for mode in dusk, night, storm
-  sprites.png                      atlas: Mac poses, ute, possum, bats, swag, glows
-  manifest.json                    world size, house rectangles, atlas frames
+                                   for mode in dusk, night, storm. Streetlights,
+                                   outdoor aircon units and aircon air are NOT
+                                   baked in: the game draws them, because the
+                                   main switch and Mac's jobs change them.
+  sprites.png                      atlas: Mac poses, ute, possum, bats, swag,
+                                   condensers, job icons, glows
+  manifest.json                    world size, house rectangles + aircon head
+                                   units + condenser spots, atlas frames
 """
 import json
 import os
@@ -16,6 +21,8 @@ import numpy as np
 from PIL import Image
 
 sys.path.insert(0, os.path.dirname(__file__))
+import pixel                 # noqa: E402
+import scene2                # noqa: E402
 from pixel import *          # noqa: E402,F401  primitives, palettes, sprites
 from scene2 import (         # noqa: E402
     W, H, GROUND, HORIZON, backyard_trees,
@@ -32,6 +39,9 @@ HOUSES = [  # id, label, builder, x
     ('units', 'Units', units2, 330),
 ]
 UTE_X, UTE_Y = 176, GROUND + 16
+POLES = [(166, 36), (322, 36)]          # x, top
+# The brick house has no outdoor unit in the art: it's the one Mac installs.
+EXTRA_CONDENSERS = {'brick': (240, GROUND - 9)}
 
 
 def render(mode, lit):
@@ -46,16 +56,23 @@ def render(mode, lit):
     backyard_trees(cv, HORIZON + 26, pal, 'lit' if mode == 'night' else mode)
     ground_and_road(cv, pal, GROUND)
     doors = {}
+    real_condenser = scene2.condenser
     for hid, _, fn, x in HOUSES:
         n = 2 if hid in ('qld', 'brick', 'units') else 1
+        heads, conds = [], []
+        pixel.AC_HEADS = heads
+        scene2.condenser = lambda cv_, cx, cy, on, conds=conds: conds.append((cx, cy))
         info = fn(cv, x, GROUND, (lit,) * n, pal)
+        pixel.AC_HEADS = None
+        scene2.condenser = real_condenser
+        info['heads'] = heads
+        info['cond'] = conds[0] if conds else EXTRA_CONDENSERS[hid]
         doors[hid] = info
         if hid == 'brick':
             meter_box(cv, 171, GROUND - 17)
-    streetlights = mode == 'night'
     wire = '#06070B'
-    a1, b1 = pole(cv, 166, GROUND + 2, 36, streetlights, pal)
-    a2, b2 = pole(cv, 322, GROUND + 2, 36, streetlights, pal)
+    a1, b1 = pole(cv, POLES[0][0], GROUND + 2, POLES[0][1], False, pal)
+    a2, b2 = pole(cv, POLES[1][0], GROUND + 2, POLES[1][1], False, pal)
     for dy in (0, 3):
         cv.sag(0, 34 + dy, a1[0], a1[1] + dy, 5, wire)
         cv.sag(b1[0], b1[1] + dy, a2[0], a2[1] + dy, 6, wire)
@@ -65,9 +82,6 @@ def render(mode, lit):
     cv.sag(a2[0], a2[1] + 1, *doors['shop']['eave'], 3, wire)
     cv.sag(b2[0], b2[1] + 1, *doors['units']['eave'], 2, wire)
     cv.sag(a1[0], a1[1] + 1, *doors['fibro']['eave'], 9, wire)
-    if streetlights:
-        for px_ in (175, 331):
-            cv.glow(px_, GROUND + 7, 20, '#FFD27A', 0.45, rx=1.5, ry=0.55)
     if lit:
         for v in doors.values():
             dx, dy = v['door']
@@ -75,7 +89,7 @@ def render(mode, lit):
     return cv, doors
 
 
-def house_rects(dark, lit):
+def house_rects(dark, lit, doors):
     diff = np.any(dark.a != lit.a, axis=2)
     ys, xs = np.nonzero(diff)
     centers = []
@@ -89,8 +103,12 @@ def house_rects(dark, lit):
         m = owner == i
         x0, x1 = int(xs[m].min()), int(xs[m].max()) + 1
         y0, y1 = int(ys[m].min()), int(ys[m].max()) + 1
+        d = doors[hid]
         rects.append({'id': hid, 'label': label, 'x': x0, 'y': y0, 'w': x1 - x0, 'h': y1 - y0,
-                      'door': int(centers[i])})
+                      'door': int(centers[i]),
+                      'rooms': [list(r) for r in d['rooms']],
+                      'heads': [list(u) for u in d['heads']],
+                      'cond': list(d['cond'])})
     return rects
 
 
@@ -156,6 +174,41 @@ SWAG = [
     "..OOOOOOOOOOOOOOOOOOOOOOOOO.",
 ]
 SWAG_PAL = {'O': '#0D0E14', 'G': '#4E5A3A', 'g': '#6E7A52'}
+# Mac holding a light globe up (built on the wave pose)
+MAC_BULB = [
+    "..............OOO.",
+    ".............OYYYO",
+    ".............OYwYO",
+    ".............OYYyO",
+    "..............ORO.",
+    "......OOOOO...OTO.",
+    ".....OCCCCCO.OSSO.",
+] + MAC_WAVE[2:]
+MAC_BULBWALK = MAC_BULB[:21] + [r + '..' for r in MAC_WALK[16:]]
+BULB_PAL = dict(MAC_PAL, Y='#FFF3C4', y='#E2C778', w='#FFFFFF')
+
+
+def condenser_rows(fan):
+    """Outdoor unit, 8x7 with outline. fan: None (off), 'a' or 'b'."""
+    rows = [list(".OOOOOO."), list("OccccccO"), list("OcgggccO"), list("OcgggccO"),
+            list("OcgggccO"), list("OddddddO"), list(".OOOOOO.")]
+    if fan:
+        rows[3][3] = 'f'
+        for (cx, cy) in ([(2, 2), (4, 4)] if fan == 'a' else [(4, 2), (2, 4)]):
+            rows[cy][cx] = 'f'
+    return [''.join(r) for r in rows]
+
+
+COND_PAL = {'O': '#0A0B10', 'c': '#C9C9C4', 'd': '#9A9A96', 'g': '#3A3A40', 'f': '#9A9AA2'}
+ICON_PAL = {'O': '#0D0E14', 'D': '#1C1C1B', 'G': '#F5B83D', 'w': '#FFF3C4', 'R': '#B9BEC6', 'B': '#86CDEE'}
+_PIN = [".OOOOOOO.", "...OOO...", "....O...."]
+ICON_GLOBE = [".OOOOOOO.", "ODDDDDDDO", "ODDGGGDDO", "ODGwGGGDO", "ODGGGGGDO",
+              "ODDGGGDDO", "ODDDRDDDO", "ODDDRDDDO"] + _PIN
+ICON_AC = [".OOOOOOO.", "ODDDDDDDO", "ODBDBDBDO", "ODDBBBDDO", "ODBBBBBDO",
+           "ODDBBBDDO", "ODBDBDBDO", "ODDDDDDDO"] + _PIN
+ICON_STORM = [".OOOOOOO.", "ODDDDGGDO", "ODDDGGDDO", "ODDGGDDDO", "ODGGGGGDO",
+              "ODDDGGDDO", "ODDGGDDDO", "ODDGDDDDO"] + _PIN
+
 BAT_UP = ["O...O", ".OOO.", "..O.."]
 BAT_DOWN = [".....", "OOOOO", "..O.."]
 
@@ -170,6 +223,14 @@ def build_atlas():
     tiles.append(('mac-wave', rows_to_rgba(MAC_WAVE, MAC_PAL)))
     tiles.append(('mac-look', rows_to_rgba(MAC_LOOK, MAC_PAL)))
     tiles.append(('mac-sleep', rows_to_rgba(MAC_SLEEP, MAC_PAL)))
+    tiles.append(('mac-bulb', rows_to_rgba(MAC_BULB, BULB_PAL)))
+    tiles.append(('mac-bulbwalk', rows_to_rgba(MAC_BULBWALK, BULB_PAL)))
+    tiles.append(('condenser', rows_to_rgba(condenser_rows(None), COND_PAL)))
+    tiles.append(('condenser-a', rows_to_rgba(condenser_rows('a'), COND_PAL)))
+    tiles.append(('condenser-b', rows_to_rgba(condenser_rows('b'), COND_PAL)))
+    tiles.append(('icon-globe', rows_to_rgba(ICON_GLOBE, ICON_PAL)))
+    tiles.append(('icon-ac', rows_to_rgba(ICON_AC, ICON_PAL)))
+    tiles.append(('icon-storm', rows_to_rgba(ICON_STORM, ICON_PAL)))
     tiles.append(('swag', rows_to_rgba(SWAG, SWAG_PAL)))
     tiles.append(('possum', rows_to_rgba(POSSUM, POSSUM_PAL)))
     tiles.append(('bat-up', rows_to_rgba(BAT_UP, {'O': '#2A1E3A'})))
@@ -184,6 +245,7 @@ def build_atlas():
     tiles.append(('glow-headlight', glow_rgba(44, 10, '#FFF1C2', 0.55)))
     tiles.append(('glow-beacon', glow_rgba(25, 25, '#F5B83D', 0.6)))
     tiles.append(('glow-torch', glow_rgba(29, 29, '#FFF1C2', 0.55)))
+    tiles.append(('glow-street', glow_rgba(61, 23, '#FFD27A', 0.45)))
     # shelf-pack into one row-wrapped atlas
     aw, x, y, rowh = 256, 0, 0, 0
     places = []
@@ -211,7 +273,7 @@ def main(out):
         Image.fromarray(dark.a, 'RGB').save(os.path.join(out, f'bg-{mode}.png'), optimize=True)
         Image.fromarray(lit.a, 'RGB').save(os.path.join(out, f'lit-{mode}.png'), optimize=True)
         if mode == 'dusk':
-            rects = house_rects(dark, lit)
+            rects = house_rects(dark, lit, doors)
     atlas, frames = build_atlas()
     atlas.save(os.path.join(out, 'sprites.png'), optimize=True)
     manifest = {
@@ -219,7 +281,10 @@ def main(out):
         'houses': rects,
         'ute': {'x': UTE_X - 8, 'y': UTE_Y - 6, 'front': UTE_X - 6, 'beacon': [UTE_X + 33, UTE_Y - 3],
                 'headlight': [UTE_X - 6, UTE_Y + 11]},
-        'poles': [166, 322],
+        'poles': [p[0] for p in POLES],
+        # lamp pixel and the centre of its light pool on the footpath
+        'streetlights': [[x + 9, top + 11, x + 9, GROUND + 7] for x, top in POLES],
+        'meter': [171, GROUND - 17],
         'wireY': 37,
         'frames': frames,
     }

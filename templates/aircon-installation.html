@@ -2,39 +2,45 @@
 {% import '_macros.html' as m %}
 {% set AIRCON_AREA = ['Corindi Beach', 'Woolgoolga', 'Sandy Beach', 'Emerald Beach', 'Moonee Beach', 'Sapphire Beach', 'Coffs Harbour', 'Sawtell'] %}
 {% block title %}Split System Installation Coffs Harbour | Free Quotes | MGR Electrical{% endblock %}
-{% block description %}Split system air conditioning supply and installation across Coffs Harbour, Woolgoolga and the Coffs Coast. A licensed electrician does the circuit and sign-off too. Free quotes.{% endblock %}
+{% block og_title %}Split System Installation Coffs Harbour — MGR Electrical{% endblock %}
+{% block description %}Split system air conditioning supplied and installed in Coffs Harbour, Woolgoolga and the Coffs Coast. Licensed electrician does the circuit and sign-off too. Free quotes.{% endblock %}
 {% block eyebrow %}Split system installation{% endblock %}
-{% block h1 %}Split system installation, Coffs Harbour.{% endblock %}
-{% block lede %}Supply and install, or install a unit you’ve already bought. One licensed electrician does the unit, the circuit and the sign-off. Free quotes.{% endblock %}
-{% block subnav %}<p class="subnav"><a href="aircon-service-repairs">Existing unit playing up? →</a></p>{% endblock %}
+{% block h1 %}Split system installation in Coffs Harbour.{% endblock %}
+{% block lede %}Supplied and installed by one licensed electrician — the unit, the circuit and the sign-off. Or bring your own unit. Free quotes.{% endblock %}
 {% block art %}{{ m.sprite('mac-box', 7, 'Pixel-art Mac carrying an outdoor aircon unit') }}{% endblock %}
 {% block content %}
 <section class="block" aria-labelledby="size-h">
   <div class="wrap">
     <div class="block-head">
-      <div class="stack"><span class="tape">Get it right</span><h2 id="size-h">Cooling that’s sized right.</h2></div>
-      <p>Buying the wrong size is the most common mistake. An undersized unit runs flat out all day; an oversized one cycles on and off and wastes power. Mac sizes it before anything goes on the wall.</p>
+      <div class="stack"><span class="tape">Supply &amp; install</span><h2 id="size-h">Cooling that’s sized right.</h2></div>
+      <p>The most common mistake with air conditioning is buying the wrong size unit. Too small and it runs flat out; too big and it short-cycles and costs more to run. Mac sizes it properly first.</p>
     </div>
     <div class="grid">
       <article class="card">
         <h3>New split systems</h3>
-        <p>Supplied and installed with all the electrical work and a neat finish.</p>
+        <p>Supplied and installed, including all the electrical work and a tidy finish inside and out.</p>
         <ul>
           <li>Single and multi-head systems</li>
-          <li>Bedrooms, living areas and offices</li>
-          <li>Sizing advice before you buy</li>
+          <li>Bedrooms, living areas, offices</li>
+          <li>Advice on sizing before you buy</li>
         </ul>
       </article>
       <article class="card">
         <h3>One trade, one bill</h3>
-        <p>Most split systems need their own circuit and an isolator. As a licensed electrician, Mac does that in the same job, checks the switchboard can take it, and signs it off.</p>
+        <p>Most split systems need their own circuit and an isolator. Mac is a licensed electrician, so that’s part of the same job.</p>
+        <ul>
+          <li>Dedicated circuit and isolator</li>
+          <li>Switchboard checked</li>
+          <li>Signed off by a licensed electrician</li>
+        </ul>
       </article>
       <article class="card">
         <h3>Your unit or ours</h3>
+        <p>Mac can supply the unit, or install one you’ve already bought — just check the size with him first.</p>
         <ul>
           <li>Supply and install</li>
-          <li>Install only, for a unit you’ve bought (after a size check)</li>
-          <li>Removal and disposal of the old one</li>
+          <li>Install-only for your own unit</li>
+          <li>Old unit removed and disposed of</li>
         </ul>
       </article>
     </div>
@@ -44,14 +50,15 @@
 <section class="block raised" aria-labelledby="quote-tips-h">
   <div class="wrap grid">
     <div class="card">
-      <h3 id="quote-tips-h">Free quotes, no upselling.</h3>
-      <p>Send the room size, whether there’s an existing unit, and roughly where you’d like it mounted. Photos help. You’ll get a straight recommendation on the size you actually need.</p>
-      <div class="more"><a href="#quote">Ask for a quote →</a></div>
+      <span class="tape">Getting a quote</span>
+      <h2 id="quote-tips-h" style="font-size:2rem">Free quotes, no upselling.</h2>
+      <p>Tell Mac the room size, whether there’s an existing unit and roughly where you’d want it mounted. Photos help. You’ll get a straight recommendation on the size you actually need.</p>
+      <div class="more">{{ m.call_btn('aircon-install-call', 'Call 0434 023 625') }}</div>
     </div>
     <div class="card cool">
-      <span class="tape tape-cool">Worth knowing</span>
-      <h3>Beat the summer rush.</h3>
-      <p>Installs book out fast once the heat arrives. Getting it done before then means no waiting.</p>
+      <span class="tape tape-cool">Beat the summer rush</span>
+      <p>Installs book out fast once the heat arrives. Getting it in during spring means no waiting when you actually need it.</p>
+      <p><a href="aircon-service-repairs">Existing unit playing up? See repairs &amp; servicing →</a></p>
     </div>
   </div>
 </section>
@@ -60,7 +67,7 @@
   <div class="wrap">
     <div class="block-head">
       <div class="stack"><span class="tape">Where we work</span><h2 id="area-h">Coffs Harbour and the northern beaches.</h2></div>
-      <p>Based on the Coffs Coast, installing from Sawtell up to Corindi, plus Grafton.</p>
+      <p>Based on the Coffs Coast and installing from Sawtell up to Corindi, plus Grafton.</p>
     </div>
     {{ m.route(AIRCON_AREA, inland=['Grafton']) }}
   </div>
@@ -70,11 +77,11 @@
   <div class="wrap">
     <div class="block-head"><div class="stack"><span class="tape">Common questions</span><h2 id="faq-h">Before you call.</h2></div></div>
     {{ m.faq([
-      ('What size unit do I need?', 'It depends on room size, ceiling height, insulation and how much sun the room gets. Send the room dimensions and you’ll get a straight answer.'),
-      ('Can I buy my own unit?', 'Yes, Mac can install one you’ve bought — just check the size with him first.'),
-      ('Do I need extra electrical work?', 'Usually a split system needs its own circuit and isolator. That’s included in the same job.'),
-      ('How long does an install take?', 'A straightforward single-head system is typically a day. Multi-head systems or tricky runs take longer, and you’ll know before work starts.'),
-      ('Which brands do you install?', 'All the common split system brands. If you have a preference, mention it when you ask for a quote.'),
+      ('What size unit do I need?', 'It depends on room size, ceiling height, insulation and how much sun the room gets. Tell Mac the room dimensions and he’ll give you a straight answer rather than upselling you.'),
+      ('Can I buy my own unit?', 'Yes. Mac can supply and install, or install a unit you’ve already bought. Check the size with him before you buy so you don’t end up with the wrong one.'),
+      ('Do I need extra electrical work?', 'Usually a split system needs its own circuit and an isolator. Because Mac is a licensed electrician, that’s part of the same job rather than a second trade and a second bill.'),
+      ('How long does an install take?', 'A straightforward single-head split system is generally a day. Multi-head systems or tricky runs take longer — you’ll be told before work starts, not after.'),
+      ('Which brands do you install?', 'All the common split system brands. If you have one in mind, mention it when you ask for a quote.'),
     ]) }}
   </div>
 </section>

@@ -1,41 +1,48 @@
 {% extends '_page.html' %}
 {% import '_macros.html' as m %}
 {% block title %}24 Hour Emergency Electrician | Woolgoolga & Coffs Harbour | MGR Electrical{% endblock %}
-{% block description %}24 hour emergency electrician across Woolgoolga, Coffs Harbour and Grafton — power loss, burning smells, breakers that won’t stay on, storm damage. Call 0434 023 625.{% endblock %}
-{% block eyebrow %}Power out? Burning smell?{% endblock %}
-{% block h1 %}24 hour emergency electrician.{% endblock %}
-{% block lede %}Power out, a burning smell, a breaker that won’t stay on — ring 0434 023 625 any hour. You’ll get Mac, not a form.{% endblock %}
+{% block og_title %}24 Hour Emergency Electrician — MGR Electrical{% endblock %}
+{% block description %}Emergency electrician answering 24 hours across Woolgoolga, Coffs Harbour and Grafton. Power loss, burning smells, tripping breakers, storm damage. Call 0434 023 625.{% endblock %}
+{% block quote_href %}contact#quote{% endblock %}
+{% block eyebrow %}24 hours, 7 days{% endblock %}
+{% block h1 %}Electrical emergency? Ring now.{% endblock %}
+{% block lede %}If the power’s out, something’s burning or a breaker won’t stay on, don’t wait until morning and don’t fill in a form. Call and you’ll get Mac.{% endblock %}
+{% block hero_buttons %}{{ m.call_btn('emergency-hero-call', 'Call 0434 023 625 now') }}{% endblock %}
+{% block subnav %}
+<ul class="ticks" style="margin-top:6px">
+  <li>Answered day and night</li>
+  <li>Local — not a call centre</li>
+  <li>Licensed &amp; insured</li>
+  <li>Straight answer on cost before we start</li>
+</ul>
+{% endblock %}
 {% block art %}{{ m.sprite('ute', 3, 'Pixel-art white dual-cab ute with a red ladder and bull bar') }}{% endblock %}
 {% block content %}
-<section class="block" aria-labelledby="first-h">
+<section class="block" aria-labelledby="ring-h">
   <div class="wrap">
-    <div class="alert" style="max-width:820px">
-      <h2 id="first-h" style="font-size:1.7rem">Safety first</h2>
-      <p><strong>If someone has had a shock, or there’s fire or smoke, call 000 first.</strong> Mac can make the property safe and handle the repairs afterwards.</p>
-    </div>
-  </div>
-</section>
-
-<section class="block" style="padding-top:0" aria-labelledby="ring-h">
-  <div class="wrap">
-    <div class="block-head"><div class="stack"><span class="tape">Ring straight away</span><h2 id="ring-h">When it can’t wait.</h2></div></div>
+    <div class="block-head"><div class="stack"><span class="tape">Call straight away for</span><h2 id="ring-h">Don’t wait on these.</h2></div></div>
     <div class="grid">
       <article class="card hot">
-        <h3>Burning smells &amp; hot fittings</h3>
-        <p>A switch, power point or light that smells hot or feels warm. If it’s safe, switch that circuit off at the board, then call.</p>
+        <h3>A burning smell, or something hot</h3>
+        <p>A hot switch, powerpoint or fitting, or any smell of burning plastic. Turn the circuit off at the board if you safely can, then ring.</p>
       </article>
       <article class="card hot">
         <h3>Total or partial power loss</h3>
         <p>Especially if the neighbours still have power — that usually means the fault is on your side of the meter.</p>
       </article>
       <article class="card hot">
-        <h3>Safety switch keeps tripping</h3>
-        <p>It’s doing its job. Something on that circuit is faulty, and the cause needs finding before it’s reset again.</p>
+        <h3>A breaker that won’t stay on</h3>
+        <p>A safety switch tripping repeatedly is doing its job. Something is causing it, and it needs finding rather than resetting.</p>
       </article>
       <article class="card hot">
         <h3>Storm or water damage</h3>
-        <p>Water near the switchboard or wiring. Keep clear and call before touching anything. <a href="storm-electrician">More on storm damage →</a></p>
+        <p>Water anywhere near switchboards, wiring or fittings. Stay clear of it and ring before touching anything.</p>
+        <div class="more"><a href="storm-electrician">Storm damage, insurance reports &amp; storm protection →</a></div>
       </article>
+    </div>
+    <div class="alert" style="max-width:820px;margin-top:16px">
+      <p><strong>If someone has been shocked, or there’s fire or smoke — call 000 first.</strong></p>
+      <p>Ring Mac afterwards to make the property safe and sort the repair.</p>
     </div>
   </div>
 </section>
@@ -43,27 +50,33 @@
 <section class="block raised" aria-labelledby="wait-h">
   <div class="wrap grid">
     <div class="card">
-      <h3 id="wait-h">While you wait</h3>
-      <ul>
-        <li>Switch off the affected circuit, if it’s safe to</li>
-        <li>Unplug appliances on that circuit</li>
-        <li>Check whether the neighbours have power</li>
-        <li>Keep everyone away from water</li>
-        <li>Don’t open up the switchboard</li>
+      <span class="tape">While you wait</span>
+      <h2 id="wait-h" style="font-size:2rem">A few things that help.</h2>
+      <p>If it’s safe to do so, these make the callout faster — but never go poking around inside a switchboard.</p>
+      <ul class="ticks">
+        <li>Switch off the circuit at the board if you can do it safely</li>
+        <li>Unplug appliances on the affected circuit</li>
+        <li>Check whether neighbours have power too</li>
+        <li>Keep everyone clear of any water near wiring</li>
       </ul>
     </div>
     <div class="card">
-      <h3>What it costs</h3>
-      <p>After-hours work costs more than a booked job — that’s the same with any sparky. You’ll be told the price before any work starts.</p>
-      <div class="more">{{ m.call_btn('emergency-cost', 'Call Mac · 0434 023 625') }}</div>
+      <span class="tape tape-amber">What it costs</span>
+      <p>After-hours work costs more than a booked job — that’s true of every electrician. The difference here is you’ll be told what you’re up for before Mac starts, not when the invoice arrives.</p>
+      <div class="more">{{ m.call_btn('emergency-cost-call', 'Call 0434 023 625') }}</div>
     </div>
   </div>
 </section>
 
 <section class="block" aria-labelledby="area-h">
   <div class="wrap">
-    <div class="block-head"><div class="stack"><span class="tape">Where we work</span><h2 id="area-h">Day and night, coast to Grafton.</h2></div><p>Local, licensed and insured.</p></div>
+    <div class="block-head">
+      <div class="stack"><span class="tape">Service area</span><h2 id="area-h">Where we work.</h2></div>
+      <p>Based in Woolgoolga, working right along the Coffs Coast and inland to Grafton.</p>
+    </div>
     {{ m.route(m.COAST, inland=['Grafton']) }}
+    <div class="btn-row" style="margin-top:24px">{{ m.call_btn('areas-call', 'Call 0434 023 625') }}</div>
   </div>
 </section>
 {% endblock %}
+{% block quote %}{% endblock %}
