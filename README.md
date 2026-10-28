@@ -2,7 +2,7 @@
 
 The new site for [MGR Electrical](https://mgrelectrical.com.au), Mac's electrical and air conditioning business in Woolgoolga, the Coffs Coast and Grafton.
 
-The home page opens on **Mac's Street**, a little pixel-art game that plays itself. The big switch under it is the street's **main switch**: it powers the house lights, the aircons and the streetlights (leave it off and Mac turns it back on). Mac fetches globes from the ute for blown lights, carries outdoor units over to install aircons (cool or warm air comes out once they're in), and services the ones flashing red. Tap a house with a job to send him. **Storm Night** is a 30-second round: tap houses the lightning knocks out, and flick the main back on when it trips. The score can be sent to a mate.
+The home page opens on **Mac's Street**, a little pixel-art game that plays itself. The big switch under it is the street's **main switch**: it powers the house lights, the aircons and the streetlights (leave it off and Mac turns it back on). Mac always says what he's about to do, then goes to the ute (the toolbox opens) for whatever the job needs: a globe for a blown light, or a new outdoor unit to install an aircon or to replace one that's caught fire or started sparking. Cool or warm air comes out once it's running. Turn the power off and he says so straight away and goes to put it back on. Tap a house with a job to make it his next one. **Storm Night** is a 30-second round: tap houses the lightning knocks out, and flick the main back on when it trips. The score can be sent to a mate.
 
 - **Preview:** https://paulhauner.github.io/mgr-electrical-website/ (GitHub Pages, served from `docs/`; marked `noindex`)
 - **Live:** https://mgrelectrical.com.au (not switched over yet)
@@ -38,7 +38,7 @@ python3 art/export_game.py site/game   # redraw backgrounds, house layers, sprit
 python3 build.py
 ```
 
-`art/pixel.py` holds the drawing primitives, palettes and Mac's sprites, `art/scene2.py` the houses, and `art/hilux.py` the ute. Everything is drawn at 1× and scaled up in the browser with nearest-neighbour, so a pixel is a pixel.
+`art/pixel.py` holds the drawing primitives, palettes and Mac's sprites, `art/scene2.py` the houses, and `art/hilux.py` the ute. `area_map.py` draws the service-area map (an SVG built into each page; coordinates are approximate). Everything is drawn at 1× and scaled up in the browser with nearest-neighbour, so a pixel is a pixel.
 
 ## Launching on mgrelectrical.com.au
 

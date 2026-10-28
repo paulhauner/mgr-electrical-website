@@ -34,21 +34,26 @@
 </div>
 {%- endmacro %}
 
-{% macro route(stops, home='Woolgoolga', inland=None, inland_note='') -%}
-<div class="route">
-  <ol>
-  {% for s in stops %}
-    <li{% if s == home %} class="home"{% endif %}>{{ s }}{% if s == home %} · home base{% endif %}</li>
-  {% endfor %}
-  </ol>
-  {% if inland %}
-  <div class="side">
-    <span class="tape">Inland</span>
-    <ol>{% for s in inland %}<li>{{ s }}</li>{% endfor %}</ol>
-    {% if inland_note %}<p class="lede" style="margin:0;font-size:15px">{{ inland_note }}</p>{% endif %}
+{% macro area(coast, inland, focus='coast', note='') -%}
+{% set coast_block %}
+    <div>
+      <h3 class="area-h">Coffs Coast</h3>
+      <ul>{% for s in coast %}<li{% if s == 'Woolgoolga' %} class="home"{% endif %}>{{ s }}{% if s == 'Woolgoolga' %} <span>· home base</span>{% endif %}</li>{% endfor %}</ul>
+    </div>
+{% endset %}
+{% set inland_block %}
+    <div>
+      <h3 class="area-h">Clarence Valley</h3>
+      <ul>{% for s in inland %}<li{% if focus == 'grafton' and loop.first %} class="home"{% endif %}>{{ s }}</li>{% endfor %}</ul>
+      {% if note %}<p class="area-note">{{ note }}</p>{% endif %}
+    </div>
+{% endset %}
+<div class="area">
+  <div class="area-lists">
+    {% if focus == 'grafton' %}{{ inland_block }}{{ coast_block }}{% else %}{{ coast_block }}{{ inland_block }}{% endif %}
   </div>
-  {% endif %}
+  <figure class="area-map">{{ area_map(focus) }}</figure>
 </div>
 {%- endmacro %}
 
-{% set COAST = ['Corindi Beach', 'Woolgoolga', 'Safety Beach', 'Sandy Beach', 'Emerald Beach', 'Moonee Beach', 'Sapphire Beach', 'Coffs Harbour', 'Toormina', 'Sawtell'] %}
+{% set COAST = ['Corindi Beach', 'Safety Beach', 'Woolgoolga', 'Sandy Beach', 'Emerald Beach', 'Moonee Beach', 'Sapphire Beach', 'Coffs Harbour', 'Toormina', 'Sawtell'] %}

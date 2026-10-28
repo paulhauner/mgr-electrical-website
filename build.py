@@ -20,6 +20,8 @@ import numpy as np
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 from PIL import Image, ImageDraw, ImageFont
 
+from area_map import area_map
+
 ROOT = os.path.dirname(os.path.abspath(__file__))
 SITE = os.path.join(ROOT, 'site')
 TEMPLATES = os.path.join(ROOT, 'templates')
@@ -135,6 +137,7 @@ def main():
 
     env = Environment(loader=FileSystemLoader(TEMPLATES), autoescape=select_autoescape(['html']),
                       trim_blocks=True, lstrip_blocks=True)
+    env.globals['area_map'] = area_map
     version = time.strftime('%Y%m%d%H%M')
     for slug, tpl, nav in PAGES:
         path = '/' if slug == 'index' else f'/{slug}'

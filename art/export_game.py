@@ -189,9 +189,13 @@ BULB_PAL = dict(MAC_PAL, Y='#FFF3C4', y='#E2C778', w='#FFFFFF')
 
 
 def condenser_rows(fan):
-    """Outdoor unit, 8x7 with outline. fan: None (off), 'a' or 'b'."""
+    """Outdoor unit, 8x7 with outline. fan: None (off), 'a', 'b' or 'burnt'."""
     rows = [list(".OOOOOO."), list("OccccccO"), list("OcgggccO"), list("OcgggccO"),
             list("OcgggccO"), list("OddddddO"), list(".OOOOOO.")]
+    if fan == 'burnt':   # scorch marks up the case
+        for (cx, cy) in [(1, 1), (2, 1), (5, 1), (6, 1), (5, 2), (6, 4), (1, 5)]:
+            rows[cy][cx] = 's'
+        return [''.join(r) for r in rows]
     if fan:
         rows[3][3] = 'f'
         for (cx, cy) in ([(2, 2), (4, 4)] if fan == 'a' else [(4, 2), (2, 4)]):
@@ -200,6 +204,7 @@ def condenser_rows(fan):
 
 
 COND_PAL = {'O': '#0A0B10', 'c': '#C9C9C4', 'd': '#9A9A96', 'g': '#3A3A40', 'f': '#9A9AA2'}
+BURNT_PAL = {'O': '#0A0B10', 'c': '#77706A', 'd': '#55504A', 'g': '#1C1A18', 's': '#2E2A26'}
 ICON_PAL = {'O': '#0D0E14', 'D': '#1C1C1B', 'G': '#F5B83D', 'w': '#FFF3C4', 'R': '#B9BEC6', 'B': '#86CDEE'}
 _PIN = [".OOOOOOO.", "...OOO...", "....O...."]
 ICON_GLOBE = [".OOOOOOO.", "ODDDDDDDO", "ODDGGGDDO", "ODGwGGGDO", "ODGGGGGDO",
@@ -228,6 +233,7 @@ def build_atlas():
     tiles.append(('condenser', rows_to_rgba(condenser_rows(None), COND_PAL)))
     tiles.append(('condenser-a', rows_to_rgba(condenser_rows('a'), COND_PAL)))
     tiles.append(('condenser-b', rows_to_rgba(condenser_rows('b'), COND_PAL)))
+    tiles.append(('condenser-burnt', rows_to_rgba(condenser_rows('burnt'), BURNT_PAL)))
     tiles.append(('icon-globe', rows_to_rgba(ICON_GLOBE, ICON_PAL)))
     tiles.append(('icon-ac', rows_to_rgba(ICON_AC, ICON_PAL)))
     tiles.append(('icon-storm', rows_to_rgba(ICON_STORM, ICON_PAL)))
@@ -280,7 +286,9 @@ def main(out):
         'world': {'w': W, 'h': H, 'ground': GROUND, 'path': GROUND + 6},
         'houses': rects,
         'ute': {'x': UTE_X - 8, 'y': UTE_Y - 6, 'front': UTE_X - 6, 'beacon': [UTE_X + 33, UTE_Y - 3],
-                'headlight': [UTE_X - 6, UTE_Y + 11]},
+                'headlight': [UTE_X - 6, UTE_Y + 11],
+                # front gullwing toolbox door (x, y, w, h): Mac opens it to grab parts
+                'toolbox': [UTE_X + 49, UTE_Y + 7, 13, 9]},
         'poles': [p[0] for p in POLES],
         # lamp pixel and the centre of its light pool on the footpath
         'streetlights': [[x + 9, top + 11, x + 9, GROUND + 7] for x, top in POLES],

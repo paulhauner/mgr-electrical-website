@@ -5,12 +5,13 @@
 
    How the street works:
    - The big switch under the stage is the street's MAIN SWITCH. Off means no
-     house lights, no aircons, no streetlights. Leave it off and Mac walks to
-     the meter box and puts it back on himself.
-   - Each house has a light and an aircon. A blown globe = Mac fetches a globe
-     from the ute and puts it in. No outdoor unit = Mac carries one over and
-     installs it, then cool (or warm) air comes out. An aircon "playing up"
-     (red light flashing) = Mac services it.
+     house lights, no aircons, no streetlights. Turn it off and Mac says so
+     straight away and walks to the meter box to put it back on.
+   - Each house has a light and an aircon. Mac always says what he's about to
+     do, then goes to the ute for whatever the job needs:
+       blown globe        -> a globe from the ute; the house lights up
+       no outdoor unit    -> a new unit from the ute; installed, air comes out
+       unit on fire/sparking -> a new unit from the ute; the old one swapped out
    - Storm Night: lightning knocks houses out (tap them to send Mac), and now
      and then trips the main switch. Flick it back on fast or the street
      blacks out. */
@@ -36,9 +37,11 @@
   var raf = 0, last = 0, inView = true;
 
   var MAC_LINES = ['G’day.', 'Need a sparky? {phone}', 'Don’t touch the switchboard.', 'Back in a tick.', 'Ute’s got everything.'];
+  var NAMES = { fibro: 'fibro', qld: 'Queenslander', brick: 'brick place', shop: 'shop', units: 'units' };
   var RANKS = [[0, 'First-year apprentice'], [6, 'Fourth-year apprentice'], [12, 'A-grade sparky'], [18, 'Leading hand'], [25, 'Boss of the board']];
   var Z = ['OOOO', '..O.', '.O..', 'OOOO'];
   var AIR = { cool: '#86CDEE', warm: '#F59A5B' };
+  var FLAME = ['#FFE6A0', '#F5B83D', '#F07A2B', '#D9412A', '#A8261C'];
   var TRIP_LIMIT = 6;      // seconds to reset a tripped main before blackout
   var STORM_LEN = 30;
 
@@ -56,13 +59,13 @@
     });
   }
 
-  fetch(base + 'manifest.json')
+  fetch(base + 'manifest.json?v=3')
     .then(function (r) { return r.json(); })
     .then(function (m) {
       M = m;
       var names = ['bg-dusk', 'lit-dusk', 'bg-night', 'lit-night', 'bg-storm', 'lit-storm', 'sprites'];
       return Promise.all(names.map(function (n) {
-        return loadImage(base + n + '.png?v=2').then(function (i) { IMG[n] = i; });
+        return loadImage(base + n + '.png?v=3').then(function (i) { IMG[n] = i; });
       }));
     })
     .then(init)
@@ -80,29 +83,29 @@
     var hour = sydneyHour();
     S = {
       mode: (hour >= 19 || hour < 5) ? 'night' : 'dusk', from: null, fade: 1,
-      mains: reduceMotion, offFor: 0, flicks: [], toldOff: false,
+      mains: reduceMotion, flicks: [],
+      inviteT: 0, meterDelay: null, userOff: false,
       house: {}, flicker: {}, wait: {},
-      mac: { x: 159, dir: -1, state: 'idle', t: 1.2, carry: null, want: null, job: null, then: null, target: 0, anim: 0, hurry: false },
+      mac: { x: 159, dir: -1, state: 'idle', t: 1.2, carry: null, want: null, job: null, kind: null, then: null, target: 0, anim: 0, hurry: false, half: 0 },
       storm: null, saved: null,
       possum: { x: 236, dir: -1, goal: 236, timer: rand(18, 30) },
-      bats: [], bolts: [], flash: 0, rain: [], sparks: [], zs: [],
+      bats: [], bolts: [], flash: 0, rain: [], sparks: [], smoke: [], zs: [],
       ute: { flash: 0 },
-      priority: null, eventT: rand(5, 8), taps: 0,
+      priority: null, eventT: rand(8, 12), taps: 0,
       asleep: false, wakeT: 0,
       bubble: null
     };
-    // Who needs what when the page opens: a blown globe and no aircon at the
-    // fibro, no aircon at the brick house, and the units' aircon playing up.
+    // What needs doing when the page opens: a blown globe at the fibro, no
+    // aircon at the brick place, and the units' outdoor unit on fire.
     var month = sydneyMonth();
     var season = month >= 11 || month <= 3 ? 'cool' : (month >= 5 && month <= 8 ? 'warm' : null);
     var mixed = { fibro: 'cool', qld: 'cool', brick: 'warm', shop: 'cool', units: 'warm' };
     M.houses.forEach(function (h) {
-      S.house[h.id] = { light: 'ok', off: false, ac: 'ok', air: season || mixed[h.id] || 'cool' };
+      S.house[h.id] = { light: 'ok', off: false, ac: 'ok', air: season || mixed[h.id] || 'cool', said: null };
     });
     S.house.fibro.light = 'blown';
-    S.house.fibro.ac = 'none';
     S.house.brick.ac = 'none';
-    S.house.units.ac = 'fault';
+    S.house.units.ac = 'fire';
 
     for (var i = 0; i < 6; i++) S.bats.push({ x: rand(0, M.world.w), y: rand(8, 30), vx: rand(5, 11), ph: rand(0, 1) });
     for (var j = 0; j < 170; j++) S.rain.push({ x: rand(0, M.world.w + 40), y: rand(-20, M.world.h) });
@@ -113,13 +116,19 @@
       S.asleep = true;
       S.mode = 'night';
       S.mains = true;
+      S.house.units.ac = 'ok';
       M.houses.forEach(function (h) { S.house[h.id].off = true; });
       S.mac.state = 'sleep';
       S.mac.x = 150;
       setText('[data-hud-place]', 'Woopi · ' + sydneyTime());
       setTip('Shh. Mac’s asleep.');
+    } else if (!S.mains) {
+      // Give the visitor first go at the switch, then Mac does it himself.
+      S.inviteT = 0.9;
+      S.meterDelay = 6;
+      setTip('Flick the main switch');
     } else {
-      setTip(S.mains ? TAP + ' a house' : 'Flick the main switch');
+      setTip(TAP + ' a house');
     }
     syncSwitch();
 
@@ -215,31 +224,61 @@
 
   /* --------------------------------------------------------- house state */
   function hs(id) { return S.house[id]; }
-  function powered() { return S.mains; }
-  function lightOn(id) { var h = hs(id); return powered() && h.light === 'ok' && !h.off; }
-  function acRunning(id) { return powered() && hs(id).ac === 'ok'; }
-  // The next thing Mac has to do at a house, if anything.
+  function lightOn(id) { var h = hs(id); return S.mains && h.light === 'ok' && !h.off; }
+  function acRunning(id) { return S.mains && hs(id).ac === 'ok'; }
+  function acBroken(id) { var a = hs(id).ac; return a === 'fire' || a === 'sparks'; }
+  // The next thing Mac has to do at a house, if anything. Fires first.
   function jobAt(id) {
     var h = hs(id);
     if (h.light === 'storm') return 'storm';
     if (S.storm) return null;
+    if (acBroken(id)) return 'replace';
     if (h.light === 'blown') return 'globe';
     if (h.ac === 'none') return 'install';
-    if (h.ac === 'fault') return 'service';
     return null;
   }
-  function needs(kind) { return kind === 'globe' ? 'globe' : kind === 'install' ? 'box' : null; }
+  // What he has to fetch from the ute for it
+  function needs(kind) { return kind === 'globe' ? 'globe' : (kind === 'install' || kind === 'replace') ? 'box' : null; }
+  // Where he stands to do it: beside the outdoor unit (so you can see it
+  // being swapped), or in front of the house
+  function unitJob(kind) { return kind === 'install' || kind === 'replace'; }
+  function spot(h, kind) {
+    if (!unitJob(kind)) return h.door;
+    var c = h.cond[0] + 3;
+    return c < 30 ? c + 12 : c - 11;
+  }
   function jobs() { return M.houses.filter(function (h) { return jobAt(h.id); }); }
-  function nearestJob(x, side) {
+  function nearest(list, x, side) {
     var best = null, bd = 1e9;
-    jobs().forEach(function (h) {
+    list.forEach(function (h) {
       if (side && Math.sign(h.door - x) !== side) return;
       var d = Math.abs(h.door - x);
       if (d < bd) { bd = d; best = h; }
     });
     return best;
   }
+  function nearestJob(x, side) { return nearest(jobs(), x, side); }
   function flick(id) { if (!reduceMotion) S.flicker[id] = 0.26; }
+  function busy() { return !!(S.mac.job && S.mac.job !== 'meter') || S.mac.state === 'work' || S.mac.state === 'pickup'; }
+
+  // Mac says what he's about to do, once per job.
+  function jobLine(id, kind, isBusy) {
+    var n = 'the ' + NAMES[id];
+    var fire = hs(id).ac === 'fire';
+    if (kind === 'globe') return isBusy ? 'Another globe’s gone. I’ll get it.' : 'Globe’s gone at ' + n + '. Grabbing one from the ute.';
+    if (kind === 'install') return 'The ' + NAMES[id] + ' needs an aircon. Grabbing one from the ute.';
+    if (kind === 'replace') {
+      if (isBusy) return fire ? 'Another aircon on fire! I’ll fix it.' : 'Another broken aircon. I’ll fix it.';
+      return fire ? 'Aircon’s on fire at ' + n + '! Getting a new one.' : 'Aircon’s cooked at ' + n + '. Getting a new one.';
+    }
+    return '';
+  }
+  function announce(id, isBusy) {
+    var kind = jobAt(id);
+    if (!kind || kind === 'storm' || hs(id).said === kind) return;
+    hs(id).said = kind;
+    say(jobLine(id, kind, isBusy), 2.8, 'mac', 2);
+  }
 
   /* -------------------------------------------------------------- update */
   function update(dt) {
@@ -274,22 +313,25 @@
       updateStormHud();
     }
 
-    // main switch left off: Mac sorts it out himself
+    // main switch off: Mac goes and puts it back on
     if (!st && !S.mains && !S.asleep) {
-      S.offFor += dt;
-      if (S.offFor > 5 && mac.then !== 'meter' && mac.job !== 'meter' && (mac.state === 'idle' || mac.state === 'walk')) {
-        mac.job = 'meter';
-        mac.hurry = true;
-        say(S.toldOff ? 'I’ll get it.' : 'Who turned the power off?', 2);
-        S.toldOff = true;
-        goTo(M.meter[0] + 2, 'meter');
+      if (S.inviteT > 0) {
+        S.inviteT -= dt;
+        if (S.inviteT <= 0) say('Power’s off. Flick the main switch for us?', 3.2, 'mac', 2);
       }
-    } else {
-      S.offFor = 0;
+      if (S.meterDelay !== null) {
+        S.meterDelay -= dt;
+        if (S.meterDelay <= 0 && mac.job !== 'meter' && (mac.state === 'idle' || mac.state === 'walk')) {
+          if (!S.userOff) say('Righto, I’ll get it.', 1.8, 'mac', 2);
+          mac.job = 'meter';
+          mac.hurry = true;
+          goTo(M.meter[0] + 2, 'meter');
+        }
+      }
     }
 
     // Mac
-    var speed = st ? 95 : (mac.hurry ? 70 : 40);
+    var speed = st ? 95 : (mac.hurry ? 70 : 42);
     switch (mac.state) {
       case 'walk':
         var dx = mac.target - mac.x;
@@ -320,11 +362,29 @@
         if (mac.t <= 0) think();
     }
 
-    // a quiet street doesn't stay quiet: a globe blows or an aircon plays up
-    if (!st && !S.asleep && S.mains && !jobs().length && (mac.state === 'idle' || mac.then === 'stroll')) {
+    // the street keeps throwing up work: a globe blows, an outdoor unit
+    // catches fire or starts sparking
+    if (!st && !S.asleep && S.mains) {
       S.eventT -= dt;
-      if (S.eventT <= 0) { S.eventT = rand(6, 10); randomEvent(); }
+      if (S.eventT <= 0) { S.eventT = rand(9, 15); if (jobs().length < 2) randomEvent(); }
     }
+
+    // smoke and sparks off broken outdoor units
+    if (!st) {
+      M.houses.forEach(function (h) {
+        var a = hs(h.id).ac;
+        if (a !== 'fire' && a !== 'sparks') return;
+        var worked = mac.state === 'work' && mac.job === h.id;
+        var rate = worked ? 1.5 : a === 'fire' ? (S.mains ? 7 : 2) : 3;
+        if (Math.random() < dt * rate && S.smoke.length < 90) {
+          S.smoke.push({ x: h.cond[0] + rand(1, 5), y: h.cond[1] - (a === 'fire' && S.mains && !worked ? 5 : 2), t: 0, life: rand(1.6, 2.6) });
+        }
+        if (a === 'sparks' && S.mains && !worked && Math.random() < dt * 14) {
+          S.sparks.push({ x: Math.round(h.cond[0] + rand(-2, 8)), y: Math.round(h.cond[1] + rand(-3, 4)), t: rand(0.1, 0.3), c: pick(['#FFFFFF', '#FFF1C2', '#86CDEE', '#F5B83D']) });
+        }
+      });
+    }
+    S.smoke = S.smoke.filter(function (s) { s.t += dt; s.y -= dt * 5; s.x -= dt * (1.5 + s.t); return s.t < s.life; });
 
     // possum
     var p = S.possum;
@@ -371,21 +431,26 @@
     var mac = S.mac;
     if (S.asleep) return;
     if (mac.job === 'meter') { goTo(M.meter[0] + 2, 'meter'); return; }
+    if (!S.storm && !S.mains) { rest(0.4); return; }   // waits on the power (see update)
     var h = null;
     if (S.priority && jobAt(S.priority)) h = HOUSE[S.priority];
     S.priority = null;
-    if (!h && mac.job && jobAt(mac.job)) h = HOUSE[mac.job];
+    if (!h) h = nearest(M.houses.filter(function (x) { return hs(x.id).ac === 'fire'; }), mac.x);
+    if (!h && mac.job && HOUSE[mac.job] && jobAt(mac.job)) h = HOUSE[mac.job];
     if (!h) h = nearestJob(mac.x);
     if (h) {
       var kind = jobAt(h.id), want = needs(kind);
       mac.job = h.id;
-      if (want && mac.carry !== want) { mac.want = want; goTo(M.ute.x + 62, 'pickup'); }   // back to the ute for parts
-      else goTo(h.door, 'work');
+      announce(h.id, false);
+      if (want && mac.carry !== want) { mac.want = want; goTo(M.ute.x + 62, 'pickup'); }   // to the ute for the part
+      else goTo(spot(h, kind), 'work');
       return;
     }
     mac.job = null;
     mac.hurry = false;
     if (S.storm) { rest(0.1); return; }
+    // nothing on: put away anything he's still holding
+    if (mac.carry) { mac.want = null; goTo(M.ute.x + 62, 'pickup'); return; }
     if (Math.random() < 0.4) goTo(rand(40, M.world.w - 40), 'stroll');
     else rest(rand(3, 6));
   }
@@ -393,24 +458,24 @@
   function arrive() {
     var mac = S.mac, then = mac.then;
     mac.then = null;
-    if (then === 'pickup') { mac.state = 'pickup'; mac.t = 0.6; return; }
+    if (then === 'pickup') { mac.state = 'pickup'; mac.t = 0.9; return; }
     if (then === 'meter') {
       mac.state = 'work';
+      mac.kind = null;
       mac.t = 0.6;
       mac.dir = 1;
       return;
     }
     if (then === 'work') {
       var kind = mac.job && jobAt(mac.job);
-      if (kind) {
-        mac.state = 'work';
-        mac.kind = kind;
-        mac.t = { storm: 0.45, globe: 1.2, install: 1.8, service: 1.4 }[kind];
-        mac.anim = 0;
-        mac.dir = 1;
-        return;
-      }
-      rest(0.2);
+      if (!kind) { rest(0.2); return; }
+      if (needs(kind) && mac.carry !== needs(kind)) { think(); return; }  // the job changed under him
+      mac.state = 'work';
+      mac.kind = kind;
+      mac.t = { storm: 0.45, globe: 1.2, install: 2.0, replace: 2.2 }[kind];
+      mac.half = mac.t / 2;
+      mac.anim = 0;
+      mac.dir = unitJob(kind) && HOUSE[mac.job].cond[0] + 3 < mac.x ? -1 : 1;
       return;
     }
     rest(rand(2, 4));
@@ -422,18 +487,24 @@
       mac.job = null;
       mac.hurry = false;
       setMains(true);
-      say('Power’s back on.', 1.8);
+      say('Power’s back on.', 1.8, 'mac', 2);
       rest(0.8);
       return;
     }
-    var id = mac.job, kind = mac.kind, h = id && hs(id);
+    var id = mac.job, kind = mac.kind, h = id && hs(id), hh = id && HOUSE[id];
     mac.job = null;
     mac.kind = null;
     if (h) {
       if (kind === 'storm') { h.light = 'ok'; flick(id); }
-      if (kind === 'globe') { h.light = 'ok'; h.off = false; flick(id); mac.carry = null; }
-      if (kind === 'install') { h.ac = 'ok'; mac.carry = null; burst(HOUSE[id].cond[0] + 2, HOUSE[id].cond[1] + 2, 10); if (S.mains && Math.random() < 0.6) say(h.air === 'warm' ? 'Nice and toasty.' : 'Nice and cool.', 1.6); }
-      if (kind === 'service') { h.ac = 'ok'; }
+      if (kind === 'globe') {
+        h.light = 'ok'; h.off = false; h.said = null; flick(id); mac.carry = null;
+        if (S.mains && Math.random() < 0.3) say('Let there be light.', 1.6);
+      }
+      if (kind === 'install' || kind === 'replace') {
+        h.ac = 'ok'; h.said = null; mac.carry = null;
+        burst(hh.cond[0] + 2, hh.cond[1] + 2, 10);
+        if (S.mains && Math.random() < 0.5) say(h.air === 'warm' ? 'Nice and toasty.' : 'Nice and cool.', 1.6);
+      }
     }
     if (S.storm && !S.storm.over) {
       if (kind === 'storm') S.storm.score++;
@@ -449,22 +520,25 @@
   }
 
   function randomEvent() {
-    var candidates = [];
+    var mac = S.mac, options = [];
     M.houses.forEach(function (h) {
+      if (mac.job === h.id) return;
       var x = hs(h.id);
-      if (x.light === 'ok' && !x.off) candidates.push([h.id, 'globe']);
-      if (x.ac === 'ok') candidates.push([h.id, 'ac']);
+      if (x.light === 'ok' && !x.off) { options.push([h.id, 'globe']); options.push([h.id, 'globe']); }
+      if (x.ac === 'ok') { options.push([h.id, 'fire']); options.push([h.id, 'sparks']); }
     });
-    if (!candidates.length) return;
-    var c = pick(candidates), h = HOUSE[c[0]];
+    if (!options.length) return;
+    var c = pick(options), id = c[0], h = HOUSE[id], wasBusy = busy() || jobs().length > 0;
     if (c[1] === 'globe') {
-      hs(c[0]).light = 'blown';
+      hs(id).light = 'blown';
       var r = h.rooms[0];
       burst(r[0] + r[2] / 2, r[1] + 4, 8);
-      flick(c[0]);
+      flick(id);
     } else {
-      hs(c[0]).ac = 'fault';
+      hs(id).ac = c[1];
+      burst(h.cond[0] + 2, h.cond[1], 8);
     }
+    announce(id, wasBusy);
     redraw();
   }
 
@@ -474,8 +548,7 @@
     else {
       var h = HOUSE[id];
       if (!h) return;
-      if (mac.kind === 'install') { x = h.cond[0] + rand(-1, 7); y = h.cond[1] + rand(-1, 5); }
-      else if (mac.kind === 'service') { var u = pick(h.heads); x = u[0] + rand(0, 8); y = u[1] + rand(0, 4); }
+      if (mac.kind === 'install' || mac.kind === 'replace') { x = h.cond[0] + rand(-1, 7); y = h.cond[1] + rand(-1, 5); }
       else if (mac.kind === 'globe') { var r = pick(h.rooms); x = r[0] + rand(4, r[2] - 4); y = r[1] + rand(1, 7); }
       else { x = rand(h.x + 4, h.x + h.w - 4); y = rand(h.y + 2, h.y + h.h - 8); }
     }
@@ -499,6 +572,7 @@
   function setMains(on) {
     if (S.mains === on) return;
     S.mains = on;
+    if (on) { S.meterDelay = null; S.inviteT = 0; }
     // lights come back one after another, like they do
     M.houses.forEach(function (h, i) { S.wait[h.id] = on && !reduceMotion ? 0.12 + i * 0.12 : 0; });
     if (!S.storm && S.taps < 4 && !S.asleep) setTip(on ? TAP + ' a house' : 'Flick the main switch');
@@ -516,7 +590,7 @@
   }
 
   function onSwitch() {
-    var st = S.storm;
+    var st = S.storm, mac = S.mac;
     var now = performance.now();
     S.flicks = S.flicks.filter(function (t) { return now - t < 6000; });
     S.flicks.push(now);
@@ -530,22 +604,33 @@
       st.nextTrip = rand(8, 11);
       setMains(true);
       setTip(TAP + ' the dark houses');
+      say('Good stuff.', 1.2, 'mac', 2);
       track('game_switch', { on: true, storm: true });
       return;
     }
     setMains(!S.mains);
     track('game_switch', { on: S.mains });
+    if (!S.mains) {
+      S.userOff = true;
+      S.inviteT = 0;
+      S.meterDelay = S.asleep ? 2.2 : 0.7;
+    }
     if (S.asleep) { ringPhone(); return; }
     if (S.flicks.length >= 12) {
       S.flicks = [];
-      S.mac.state = 'look';
-      S.mac.t = 2.2;
-      say('Oi. Easy on the switch.', 2.4);
-    } else if (S.mains && S.mac.state !== 'look') {
-      if (S.mac.job === 'meter') { S.mac.job = null; S.mac.hurry = false; rest(0.6); }
-      if (S.mac.state === 'idle') { S.mac.state = 'wave'; S.mac.t = 1.4; }
-      say('Too easy.', 1.6);
-      if (S.taps < 4) setTip(TAP + ' a house');
+      mac.state = 'look';
+      mac.t = 2.2;
+      say('Oi. Easy on the switch.', 2.4, 'mac', 3);
+    } else if (!S.mains) {
+      say('Oi! Who turned the power off? I’ll get it.', 2.4, 'mac', 3);
+    } else if (mac.job === 'meter') {
+      mac.job = null;
+      mac.hurry = false;
+      rest(0.5);
+      say('Cheers.', 1.4, 'mac', 2);
+    } else {
+      if (mac.state === 'idle') { mac.state = 'wave'; mac.t = 1.2; }
+      say('Too easy.', 1.4);
     }
     draw();
   }
@@ -574,6 +659,9 @@
     S.storm = { left: STORM_LEN, next: 0.9, nextTrip: rand(8, 10), score: 0, over: false, queued: null, tripped: false, trippedFor: 0, shown: null };
     setMode('storm');
     S.mains = true;
+    S.meterDelay = null;
+    S.inviteT = 0;
+    S.smoke = [];
     M.houses.forEach(function (h) { var x = hs(h.id); x.light = 'ok'; x.off = false; });
     var mac = S.mac;
     mac.job = null; mac.kind = null; mac.carry = null; mac.want = null; mac.hurry = false;
@@ -624,6 +712,7 @@
     if (!reduceMotion) S.flash = 0.9;
     S.mains = false;
     syncSwitch();
+    say('Main’s tripped! Flick the switch!', 2.4, 'mac', 3);
     track('game_storm_trip');
   }
 
@@ -671,6 +760,7 @@
     setMode(saved.mode === 'storm' ? 'dusk' : saved.mode);
     S.house = saved.house;
     S.mains = saved.mains;
+    if (!S.mains && !S.asleep) { S.userOff = true; S.meterDelay = 1.5; }
     var mac = S.mac;
     mac.job = null; mac.kind = null; mac.carry = null; mac.want = null; mac.hurry = false;
     q('[data-hud-place]').hidden = false;
@@ -780,11 +870,12 @@
       kick();
       return;
     }
-    // a house: anything in its column above the road
+    // a house: anything in its column above the road (its outdoor unit too)
     if (wy < path + 4) {
       for (var i = 0; i < M.houses.length; i++) {
         var h = M.houses[i];
-        if (wx >= h.x - 4 && wx <= h.x + h.w + 4) { tapHouse(h); return; }
+        var x0 = Math.min(h.x, h.cond[0]) - 4, x1 = Math.max(h.x + h.w, h.cond[0] + 6) + 4;
+        if (wx >= x0 && wx <= x1) { tapHouse(h); return; }
       }
     }
   }
@@ -795,7 +886,7 @@
     if (S.storm) {
       if (S.storm.over) return;
       if (x.light !== 'storm') {
-        if (S.storm.tripped) say('It’s the main, mate. Flick the switch!', 1.8);
+        if (S.storm.tripped) say('It’s the main, mate. Flick the switch!', 1.8, 'mac', 3);
         return;
       }
       if (mac.state === 'work') { S.storm.queued = h.id; return; }
@@ -806,7 +897,7 @@
     var kind = jobAt(h.id);
     if (!kind) {
       // nothing wrong here: it's the residents' own light switch
-      if (!S.mains) { say('Power’s off, mate. Flick the main switch.', 2); return; }
+      if (!S.mains) { say('Power’s off, mate. Flick the main switch.', 2, 'mac', 2); return; }
       x.off = !x.off;
       flick(h.id);
       redraw();
@@ -814,21 +905,25 @@
     }
     if (reduceMotion) {
       if (kind === 'globe') x.light = 'ok';
-      if (kind === 'install' || kind === 'service') x.ac = 'ok';
+      if (kind === 'install' || kind === 'replace') x.ac = 'ok';
+      x.said = null;
       draw();
       return;
     }
-    // something needs fixing: Mac makes it his next job
+    // something needs fixing: Mac makes it his next job, and says so
     S.priority = h.id;
     mac.hurry = true;
-    if (mac.state === 'work' || mac.state === 'pickup' || mac.job === 'meter') return; // he'll come next
+    if (mac.state === 'work' || mac.state === 'pickup' || mac.job === 'meter' || (!S.mains && !S.storm)) {
+      announce(h.id, true);
+      return;   // he'll come next
+    }
     mac.job = h.id;
     think();
   }
 
   function ringPhone() {
     if (S.wakeT > 0) return;
-    say('Brrring brrring…', 1.4);
+    say('Brrring brrring…', 1.4, 'mac', 3);
     S.wakeT = 1.5;
     kick();
   }
@@ -836,7 +931,7 @@
     S.asleep = false;
     S.mac.state = 'idle';
     S.mac.t = 1.8;
-    say(S.mains ? 'MGR, Mac speaking.' : 'MGR, Mac speaking. Power’s out? On my way.', 2.6);
+    say(S.mains ? 'MGR, Mac speaking.' : 'MGR, Mac speaking. Power’s out? On my way.', 2.6, 'mac', 3);
     setTip(S.mains ? TAP + ' a house' : 'Flick the main switch');
   }
 
@@ -851,6 +946,7 @@
     wctx.drawImage(IMG.sprites, f.x, f.y, f.w, f.h, 0, 0, f.w, f.h);
     wctx.restore();
   }
+  function px(x, y, col) { wctx.fillStyle = col; wctx.fillRect(Math.round(x), Math.round(y), 1, 1); }
   function wireY(x) {
     var t = clamp((x - 172) / (317 - 172), 0, 1);
     return 40 + 6 * 4 * t * (1 - t);
@@ -869,17 +965,39 @@
     });
   }
 
+  function drawFlames(cx, cy, seed) {
+    var g = frameRect('glow-beacon');
+    wctx.globalAlpha = 0.6;
+    sprite('glow-beacon', cx + 3 - g.w / 2, cy - 3 - g.h / 2);
+    wctx.globalAlpha = 1;
+    var shape = [2, 4, 7, 6, 4, 2];
+    for (var i = 0; i < 6; i++) {
+      var hgt = shape[i] + 1.4 * Math.sin(clock * 11 + i * 1.9 + seed) + 0.9 * Math.sin(clock * 6.1 + i * 0.7);
+      hgt = clamp(Math.round(hgt), 1, 8);
+      for (var j = 0; j < hgt; j++) px(cx + i, cy - 1 - j, FLAME[Math.min(4, Math.floor(j * 5 / hgt))]);
+    }
+    // glowing grille, and the odd ember
+    if (Math.floor(clock * 9 + seed) % 2) px(cx + 2, cy + 2, '#F07A2B');
+    if (Math.random() < 0.15) S.sparks.push({ x: Math.round(cx + rand(0, 6)), y: Math.round(cy - rand(4, 8)), t: rand(0.2, 0.5), c: pick(['#F5B83D', '#F07A2B']) });
+  }
+
   function drawPower() {
+    var mac = S.mac;
     var spin = Math.floor(clock / 0.09) % 2 ? 'condenser-a' : 'condenser-b';
     M.houses.forEach(function (h, i) {
-      var x = hs(h.id), running = acRunning(h.id);
-      // outdoor unit (none until Mac installs one)
-      if (x.ac !== 'none') sprite(running ? spin : 'condenser', h.cond[0] - 1, h.cond[1] - 1);
-      // head units: blue light + air when running, red flashing light when playing up
+      var x = hs(h.id), running = acRunning(h.id), broken = acBroken(h.id);
+      var working = mac.state === 'work' && mac.job === h.id && (mac.kind === 'install' || mac.kind === 'replace');
+      var cx = h.cond[0], cy = h.cond[1];
+      // outdoor unit: none until installed, scorched when broken, the new one
+      // goes in halfway through Mac's job, and the fan spins when it runs
+      if (working && mac.t <= mac.half) sprite('condenser', cx - 1, cy - 1);
+      else if (broken) sprite('condenser-burnt', cx - 1, cy - 1);
+      else if (x.ac === 'ok') sprite(running ? spin : 'condenser', cx - 1, cy - 1);
+      if (x.ac === 'fire' && S.mains && !working && !S.storm) drawFlames(cx, cy, i * 2.3);
+      // head units: blue light + air when running, red flashing light when broken
       h.heads.forEach(function (u, k) {
         if (running) {
-          wctx.fillStyle = '#3FA9E0';
-          wctx.fillRect(u[0] + 7, u[1], 1, 1);
+          px(u[0] + 7, u[1], '#3FA9E0');
           wctx.fillStyle = AIR[x.air];
           for (var s = 0; s < 3; s++) {
             var ph = (clock * 0.9 + s / 3 + i * 0.37 + k * 0.21) % 1;
@@ -889,9 +1007,8 @@
             wctx.fillRect(Math.round(ax), Math.round(u[1] + 5 + ph * 6), 2, 1);
           }
           wctx.globalAlpha = 1;
-        } else if (x.ac === 'fault' && S.mains && Math.floor(clock * 2.5) % 2 === 0) {
-          wctx.fillStyle = '#FF4A3A';
-          wctx.fillRect(u[0] + 7, u[1], 1, 1);
+        } else if (broken && S.mains && Math.floor(clock * 2.5) % 2 === 0) {
+          px(u[0] + 7, u[1], '#FF4A3A');
         }
       });
     });
@@ -900,10 +1017,30 @@
       var g = frameRect('glow-street');
       M.streetlights.forEach(function (l) {
         sprite('glow-street', l[2] - (g.w - 1) / 2, l[3] - (g.h - 1) / 2);
-        wctx.fillStyle = '#FFE6A0';
-        wctx.fillRect(l[0], l[1], 1, 1);
+        px(l[0], l[1], '#FFE6A0');
       });
     }
+  }
+
+  // The ute's front gullwing toolbox, opened while Mac grabs a part.
+  function drawToolbox() {
+    var b = M.ute.toolbox, x = b[0], y = b[1], w = b[2], h = b[3];
+    wctx.fillStyle = '#17191D';
+    wctx.fillRect(x + 1, y + 1, w - 2, h - 2);
+    wctx.fillStyle = '#5A5E66';
+    wctx.fillRect(x + 1, y + 5, w - 2, 1);              // shelf
+    px(x + 3, y + 3, '#FFF3C4'); px(x + 5, y + 3, '#FFF3C4'); px(x + 7, y + 3, '#FFF3C4');   // spare globes
+    wctx.fillStyle = '#C9C9C4';
+    wctx.fillRect(x + 2, y + 6, 4, 2);                  // a boxed unit
+    wctx.fillStyle = '#E2572B';
+    wctx.fillRect(x + 8, y + 6, 3, 2);                  // cable
+    // the lid, swung up
+    wctx.fillStyle = '#0D0E14';
+    wctx.fillRect(x - 1, y - 7, w + 2, 6);
+    wctx.fillStyle = '#C4C8CC';
+    wctx.fillRect(x, y - 6, w, 4);
+    wctx.fillStyle = '#E6E9EC';
+    wctx.fillRect(x, y - 6, w, 1);
   }
 
   function drawIcons() {
@@ -912,8 +1049,8 @@
     M.houses.forEach(function (h) {
       var kind = jobAt(h.id);
       if (!kind) return;
-      // aircon jobs only make sense to show once there's power to test with
-      if ((kind === 'install' || kind === 'service') && !S.mains) return;
+      // aircon jobs only show once there's power to see them with
+      if ((kind === 'install' || kind === 'replace') && !S.mains) return;
       var name = kind === 'globe' ? 'icon-globe' : kind === 'storm' ? 'icon-storm' : 'icon-ac';
       var f = frameRect(name);
       sprite(name, h.door - (f.w - 1) / 2, h.y - f.h - 3 - bob);
@@ -928,7 +1065,7 @@
     if (mac.state === 'work') {
       var alt = Math.floor(mac.anim / 0.25) % 2;
       if (mac.kind === 'globe') return alt ? 'mac-bulb' : 'mac-idle';
-      if (mac.kind === 'install') return mac.t > 0.9 ? 'mac-box' : 'mac-idle';
+      if (mac.kind === 'install' || mac.kind === 'replace') return mac.t > mac.half ? 'mac-box' : 'mac-idle';
       return 'mac-idle';
     }
     var carry = mac.carry === 'box' ? 'box' : mac.carry === 'globe' ? 'bulb' : '';
@@ -956,10 +1093,17 @@
       var p = S.possum;
       sprite('possum', p.x, wireY(p.x + 6) - 4, p.dir > 0);
     }
+    // smoke drifting off broken outdoor units
+    S.smoke.forEach(function (s) {
+      wctx.globalAlpha = 0.55 * (1 - s.t / s.life);
+      wctx.fillStyle = '#8A8A90';
+      wctx.fillRect(Math.round(s.x), Math.round(s.y), s.t > 0.8 ? 2 : 1, s.t > 0.8 ? 2 : 1);
+    });
+    wctx.globalAlpha = 1;
     // torch glow while Mac works in the dark
     if (mac.state === 'work' && mac.job && mac.job !== 'meter' && (S.mode !== 'dusk' || !S.mains)) {
-      var h = HOUSE[mac.job], g = frameRect('glow-torch');
-      sprite('glow-torch', h.door - g.w / 2, h.y + h.h - 22);
+      var g = frameRect('glow-torch');
+      sprite('glow-torch', mac.x - g.w / 2, path - 24);
     }
     // Mac
     if (mac.state === 'sleep') {
@@ -967,7 +1111,7 @@
       sprite('mac-sleep', mac.x - 12, path - 9);
     } else {
       var name = macSprite(), f = frameRect(name);
-      sprite(name, mac.x - f.w / 2, path - f.h, mac.dir < 0 && mac.state !== 'look' && mac.state !== 'work');
+      sprite(name, mac.x - f.w / 2, path - f.h, mac.dir < 0 && mac.state !== 'look');
     }
     // ute, headlights, beacon
     var u = M.ute;
@@ -977,6 +1121,7 @@
       for (var k = 0; k < times; k++) sprite('glow-headlight', u.front - hl.w, u.headlight[1] - hl.h / 2);
     }
     sprite('ute', u.x, u.y);
+    if (mac.state === 'pickup') drawToolbox();
     if (S.mode === 'storm' && Math.floor(performance.now() / 380) % 2 === 0) {
       var bg = frameRect('glow-beacon');
       sprite('glow-beacon', u.beacon[0] - bg.w / 2, u.beacon[1] - bg.h / 2);
@@ -985,7 +1130,7 @@
     }
     drawIcons();
     // sparks + zzz
-    S.sparks.forEach(function (s) { wctx.fillStyle = s.c; wctx.fillRect(Math.round(s.x), Math.round(s.y), 1, 1); });
+    S.sparks.forEach(function (s) { px(s.x, s.y, s.c); });
     S.zs.forEach(function (z) {
       wctx.globalAlpha = Math.min(1, z.t);
       glyph(Z, z.x, z.y, '#F4F1EA');
@@ -1034,8 +1179,12 @@
   }
 
   /* ---------------------------------------------------------- bubbles */
-  function say(text, t, anchor) {
-    S.bubble = { text: text, t: t, anchor: anchor || 'mac' };
+  // prio: 1 chit-chat, 2 "here's what I'm doing", 3 urgent. A lower-priority
+  // line never talks over a higher one that's still fresh.
+  function say(text, t, anchor, prio) {
+    prio = prio || 1;
+    if (S.bubble && S.bubble.prio > prio && S.bubble.t > 0.8) return;
+    S.bubble = { text: text, t: t, anchor: anchor || 'mac', prio: prio };
     var b = q('[data-bubble]');
     b.textContent = text;
     b.hidden = false;
