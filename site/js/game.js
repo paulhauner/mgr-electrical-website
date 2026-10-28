@@ -35,7 +35,7 @@
   var S = null, clock = 0;
   var raf = 0, last = 0, inView = true;
 
-  var MAC_LINES = ['G’day.', 'Need a sparky? 0434 023 625', 'Don’t touch the switchboard.', 'Back in a tick.', 'Ute’s got everything.'];
+  var MAC_LINES = ['G’day.', 'Need a sparky? {phone}', 'Don’t touch the switchboard.', 'Back in a tick.', 'Ute’s got everything.'];
   var RANKS = [[0, 'First-year apprentice'], [6, 'Fourth-year apprentice'], [12, 'A-grade sparky'], [18, 'Leading hand'], [25, 'Boss of the board']];
   var Z = ['OOOO', '..O.', '.O..', 'OOOO'];
   var AIR = { cool: '#86CDEE', warm: '#F59A5B' };
@@ -766,7 +766,7 @@
       if (mac.state === 'idle' || mac.state === 'wave' || (mac.state === 'walk' && mac.then === 'stroll')) {
         mac.state = 'wave';
         mac.t = 1.4;
-        say(pick(MAC_LINES), 2.2);
+        say(pick(MAC_LINES).replace('{phone}', phoneText()), 2.2);
         redraw();
       }
       return;
@@ -1071,6 +1071,13 @@
     t.hidden = false;
     clearTimeout(toastTimer);
     toastTimer = setTimeout(function () { t.hidden = true; }, 2600);
+  }
+  // The number as currently shown in the header: Google's call tracking may
+  // have swapped it for a forwarding number on ad visits.
+  function phoneText() {
+    var a = document.querySelector('.header-call');
+    var t = a && a.textContent.replace(/\s+/g, ' ').trim();
+    return t || '0434 023 625';
   }
   function track(event, data) {
     window.dataLayer = window.dataLayer || [];
