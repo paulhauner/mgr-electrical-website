@@ -1,0 +1,21 @@
+{% extends 'base.html' %}
+{% import '_macros.html' as m %}
+{% block title %}Page not found | MGR Electrical{% endblock %}
+{% block description %}That page doesn’t exist. Call Mac on 0434 023 625.{% endblock %}
+{% block main %}
+<section class="block notfound">
+  <div class="wrap" style="display:flex;flex-wrap:wrap;align-items:flex-end;gap:32px">
+    {{ m.sprite('mac-idle', 7, 'Pixel-art Mac') }}
+    <div class="stack">
+      <span class="tape">404</span>
+      <h1>This circuit’s dead.</h1>
+      <p class="lede" style="font-size:18px;margin:0">The page you’re after isn’t here. The rest of the site is, and so is Mac.</p>
+      <div class="btn-row" data-hero-cta>
+        <a class="btn btn-call" href="./">Back to the street</a>
+        {{ m.call_btn('404', 'Call 0434 023 625', 'btn btn-ghost') }}
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}
+{% block quote %}{% endblock %}

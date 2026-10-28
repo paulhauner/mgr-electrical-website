@@ -1,0 +1,20 @@
+{% extends 'base.html' %}
+{% import '_macros.html' as m %}
+{% block main %}
+<section class="page-hero">
+  <div class="wrap page-hero-inner">
+    <div class="lead">
+      <span class="tape">{% block eyebrow %}{% endblock %}</span>
+      <h1>{% block h1 %}{% endblock %}</h1>
+      <p class="lede">{% block lede %}{% endblock %}</p>
+      <div class="btn-row" data-hero-cta>
+        {{ m.call_btn('hero', 'Call 0434 023 625') }}
+        <a class="btn btn-ghost" href="#quote">Free quote</a>
+      </div>
+      {% block subnav %}{% endblock %}
+    </div>
+    <div class="art">{% block art %}{% endblock %}</div>
+  </div>
+</section>
+{% block content %}{% endblock %}
+{% endblock %}

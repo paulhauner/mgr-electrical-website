@@ -1,0 +1,31 @@
+{% extends '_page.html' %}
+{% import '_macros.html' as m %}
+{% block title %}Contact MGR Electrical | Woolgoolga Electrician | Free Quotes{% endblock %}
+{% block description %}Free quotes from MGR Electrical. Phone answered 24 hours for emergencies. Woolgoolga, the northern beaches, Coffs Harbour and Grafton.{% endblock %}
+{% block eyebrow %}Contact{% endblock %}
+{% block h1 %}Talk to Mac.{% endblock %}
+{% block lede %}Quotes are free. For anything urgent, ring rather than filling in the form — the phone is answered 24 hours.{% endblock %}
+{% block art %}{{ m.sprite('mac-wave', 7, 'Pixel-art Mac giving a wave') }}{% endblock %}
+{% block content %}
+<section class="block" aria-label="Ways to get in touch">
+  <div class="wrap grid">
+    <article class="card hot">
+      <span class="tape tape-amber">Phone</span>
+      <h3><a href="tel:0434023625" data-cta="contact-card" style="color:inherit;text-decoration:none">0434 023 625</a></h3>
+      <p>Answered 24 hours for emergencies. The fastest way to get Mac.</p>
+      <div class="more">{{ m.call_btn('contact-card-btn') }}</div>
+    </article>
+    <article class="card">
+      <span class="tape">Email</span>
+      <h3 style="font-size:1.35rem;text-transform:none;font-family:var(--sans);font-weight:700"><a href="mailto:mac@mgrelectrical.com.au" style="color:inherit">mac@mgrelectrical.com.au</a></h3>
+      <p>Good for quotes, plans and photos. You’ll hear back within a day.</p>
+    </article>
+    <article class="card">
+      <span class="tape">Based in</span>
+      <h3>Woolgoolga NSW 2456</h3>
+      <p>Working from Corindi to Sawtell on the Coffs Coast, and inland to Grafton.</p>
+      <p class="lic">NSW Lic 337267C · QLD Lic 79153</p>
+    </article>
+  </div>
+</section>
+{% endblock %}

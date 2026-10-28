@@ -1,0 +1,80 @@
+{% extends '_page.html' %}
+{% import '_macros.html' as m %}
+{% set AIRCON_AREA = ['Corindi Beach', 'Woolgoolga', 'Sandy Beach', 'Emerald Beach', 'Moonee Beach', 'Sapphire Beach', 'Coffs Harbour', 'Sawtell'] %}
+{% block title %}Aircon Repairs & Servicing Coffs Harbour | All Brands | MGR Electrical{% endblock %}
+{% block description %}Air conditioner repairs and servicing across Coffs Harbour, Woolgoolga and the Coffs Coast. All brands. Most services take 30 minutes to an hour. Licensed electrician.{% endblock %}
+{% block eyebrow %}Aircon repairs &amp; servicing{% endblock %}
+{% block h1 %}Aircon repairs &amp; servicing, Coffs Harbour.{% endblock %}
+{% block lede %}A licensed electrician looks after the unit and its power supply in the one visit, so there’s no second trade to chase. All common brands.{% endblock %}
+{% block subnav %}<p class="subnav"><a href="aircon-installation">Getting a new system instead? →</a></p>{% endblock %}
+{% block art %}{{ m.sprite('mac-box', 7, 'Pixel-art Mac carrying an outdoor aircon unit') }}{% endblock %}
+{% block content %}
+<section class="block" aria-labelledby="fix-h">
+  <div class="wrap">
+    <div class="block-head"><div class="stack"><span class="tape">What we fix</span><h2 id="fix-h">Repairs and servicing.</h2></div></div>
+    <div class="grid">
+      <article class="card">
+        <h3>Repairs</h3>
+        <p>The usual faults Mac sorts out:</p>
+        <ul>
+          <li>Not cooling or heating properly</li>
+          <li>Water leaking inside</li>
+          <li>Noises and rattles</li>
+          <li>Error codes and flashing lights</li>
+          <li>Tripping the power</li>
+        </ul>
+      </article>
+      <article class="card">
+        <h3>Servicing</h3>
+        <p>Keeps the unit running efficiently and catches small problems before they become big ones.</p>
+        <ul>
+          <li>Filters and coils cleaned</li>
+          <li>Drainage checked</li>
+          <li>Electrical connections tested</li>
+        </ul>
+      </article>
+      <article class="card">
+        <h3>Every common brand</h3>
+        <p>All the common split system brands, old units and new, in homes and small commercial sites.</p>
+      </article>
+      <article class="card">
+        <h3>Repair or replace?</h3>
+        <p>Mac will tell you honestly whether an old unit is worth fixing. If repair makes sense, that’s what he’ll recommend — replacement only when it’s clearly the better call.</p>
+      </article>
+    </div>
+  </div>
+</section>
+
+<section class="block raised" aria-labelledby="heat-h">
+  <div class="wrap">
+    <div class="card cool" style="max-width:760px">
+      <span class="tape tape-cool">Worth knowing</span>
+      <h3 id="heat-h">Book before the first hot week.</h3>
+      <p>Once summer properly arrives, every trade on the coast gets booked up fast. A service now means it’s ready when you need it.</p>
+    </div>
+  </div>
+</section>
+
+<section class="block" aria-labelledby="area-h">
+  <div class="wrap">
+    <div class="block-head">
+      <div class="stack"><span class="tape">Where we work</span><h2 id="area-h">Sawtell to Corindi, plus Grafton.</h2></div>
+      <p>Based on the Coffs Coast.</p>
+    </div>
+    {{ m.route(AIRCON_AREA, inland=['Grafton']) }}
+  </div>
+</section>
+
+<section class="block raised" aria-labelledby="faq-h">
+  <div class="wrap">
+    <div class="block-head"><div class="stack"><span class="tape">Common questions</span><h2 id="faq-h">Before you call.</h2></div></div>
+    {{ m.faq([
+      ('Do you service my brand?', 'Yes — all the common split system brands.'),
+      ('How long does a service take?', 'Usually 30 minutes to an hour, depending on the unit and how easy it is to get to.'),
+      ('Is it worth fixing an old unit?', 'It depends on its age and what’s wrong. Mac will look at it on site and give you a straight answer.'),
+      ('How often should a split system be serviced?', 'About once a year, ideally before summer. Units in dusty spots, or running all day, may need it more often.'),
+      ('Do you handle the electrical side too?', 'Yes. Faults in the power supply, circuit or isolator get fixed in the same visit.'),
+    ]) }}
+  </div>
+</section>
+{% endblock %}

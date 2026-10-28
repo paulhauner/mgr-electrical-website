@@ -1,0 +1,79 @@
+{% extends '_page.html' %}
+{% import '_macros.html' as m %}
+{% block title %}Air Conditioning Installation & Service | Coffs Coast | MGR Electrical{% endblock %}
+{% block description %}Split system air conditioning supplied, installed, serviced and repaired across Woolgoolga, the Coffs Coast and Grafton. Licensed electrician — one trade for the whole job.{% endblock %}
+{% block eyebrow %}Split systems{% endblock %}
+{% block h1 %}Air conditioning, supplied and installed.{% endblock %}
+{% block lede %}One trade handles the lot — the unit, the electrical work and the sign-off. Servicing and repairs too.{% endblock %}
+{% block subnav %}<p class="subnav"><a href="aircon-service-repairs">Need a repair or service? →</a><a href="aircon-installation">Getting a new system? →</a></p>{% endblock %}
+{% block art %}{{ m.sprite('mac-box', 7, 'Pixel-art Mac carrying an outdoor aircon unit') }}{% endblock %}
+{% block content %}
+<section class="block" aria-labelledby="size-h">
+  <div class="wrap">
+    <div class="block-head">
+      <div class="stack"><span class="tape">What we do</span><h2 id="size-h">Cooling that’s sized right.</h2></div>
+      <p>The most common mistake with air conditioning is buying the wrong size. Too small and it runs flat out; too big and it short-cycles and costs more to run.</p>
+    </div>
+    <div class="grid">
+      <article class="card">
+        <h3>Supply &amp; installation</h3>
+        <p>New split systems supplied and installed, including all the electrical work and a tidy finish inside and out.</p>
+        <ul>
+          <li>Single and multi-head systems</li>
+          <li>Bedrooms, living areas, offices</li>
+          <li>Dedicated circuit and isolator</li>
+          <li>Advice on sizing before you buy</li>
+        </ul>
+        <div class="more"><a href="aircon-installation">Installation →</a></div>
+      </article>
+      <article class="card">
+        <h3>Replacements</h3>
+        <p>Old unit on its last legs? Swapping it is usually cheaper than another round of repairs, and the running costs drop noticeably.</p>
+        <ul>
+          <li>Like-for-like replacement</li>
+          <li>Upgrading an undersized unit</li>
+          <li>Removal and disposal of the old one</li>
+        </ul>
+      </article>
+      <article class="card">
+        <h3>Service &amp; repairs</h3>
+        <p>Not cooling like it used to, making a noise, or leaking? Worth a look before summer rather than during it.</p>
+        <ul>
+          <li>Not cooling or heating properly</li>
+          <li>Water leaks and drainage</li>
+          <li>Noises and rattles</li>
+          <li>Error codes and electrical faults</li>
+        </ul>
+        <div class="more"><a href="aircon-service-repairs">Service &amp; repairs →</a></div>
+      </article>
+    </div>
+  </div>
+</section>
+
+<section class="block raised" aria-labelledby="heat-h">
+  <div class="wrap grid">
+    <div class="card cool">
+      <span class="tape tape-cool">Worth knowing</span>
+      <h3 id="heat-h">Book before the heat, not during it.</h3>
+      <p>Every summer the first proper hot week arrives and every sparky on the Coffs Coast is booked out for a fortnight. If your unit struggled last summer, get it sorted before the next one. Same job, no waiting.</p>
+    </div>
+    <div class="card">
+      <h3>Getting a quote</h3>
+      <p>Handy to have ready: the room size, whether there’s an existing unit, and roughly where you’d want it mounted. Photos help. Quotes are free.</p>
+      <div class="more"><a href="#quote">Ask for a quote →</a></div>
+    </div>
+  </div>
+</section>
+
+<section class="block" aria-labelledby="faq-h">
+  <div class="wrap">
+    <div class="block-head"><div class="stack"><span class="tape">Common questions</span><h2 id="faq-h">Before you call.</h2></div></div>
+    {{ m.faq([
+      ('What size unit do I need?', 'It depends on room size, ceiling height, insulation and how much sun the room gets. Tell Mac the room dimensions and he’ll give you a straight answer rather than upselling you.'),
+      ('Can you supply the unit, or do I buy it?', 'Either. Mac can supply and install, or install a unit you’ve already bought. Just check with him before you buy so you don’t end up with the wrong size.'),
+      ('Do I need extra electrical work?', 'Usually a split system needs its own circuit and an isolator. Because Mac is a licensed electrician, that’s part of the same job rather than a second trade and a second bill.'),
+      ('How long does an install take?', 'A straightforward single-head split system is generally a day. Multi-head systems or tricky runs take longer — you’ll be told before work starts, not after.'),
+    ]) }}
+  </div>
+</section>
+{% endblock %}

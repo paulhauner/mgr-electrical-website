@@ -1,0 +1,3 @@
+# Preview copy of mgrelectrical.com.au: keep it out of search results.
+User-agent: *
+Disallow: /
