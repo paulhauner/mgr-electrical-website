@@ -4,7 +4,7 @@
 {% block og_title %}MGR Electrical — Woolgoolga & Coffs Coast Electrician{% endblock %}
 {% block description %}Licensed electrician servicing Woolgoolga, Sandy Beach and the Coffs Coast. Domestic, commercial and air conditioning. 24 hour emergency callouts. Free quotes — call Mac on 0434 023 625.{% endblock %}
 {% block main %}
-<section class="stage" id="play" data-game="game/" aria-label="Mac’s Street, a little game: flick the main switch, tap a house to send Mac, or play Storm Night">
+<section class="stage" id="play" data-game="game/" aria-label="Mac’s Street, a little game: flick the main switch, tap a house to send Mac, or press Play the game">
   <img class="stage-poster px" src="game/poster.png?v={{ v }}" width="396" height="162" fetchpriority="high" alt="Pixel-art Woolgoolga street at dusk: Mac carrying an outdoor aircon unit past cutaway houses, his ute parked out front">
   <canvas aria-hidden="true"></canvas>
   <div class="hud">
@@ -13,7 +13,7 @@
       <div class="power" data-hud-power hidden></div>
     </div>
     <div class="hud-tr">
-      <button class="hud-btn amber" type="button" data-storm>{{ m.icon('bolt', 16) }}Storm Night</button>
+      <button class="hud-btn amber" type="button" data-storm>{{ m.icon('play', 16) }}Play the game</button>
       <div class="hud-stat" data-hud-time hidden><span>Time</span><b>0:30</b></div>
       <div class="hud-stat amber" data-hud-score hidden><span>Fixed</span><b>0</b></div>
       <button class="hud-btn" type="button" data-quit hidden aria-label="Quit Storm Night">{{ m.icon('close', 18) }}</button>
