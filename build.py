@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 """Build the MGR Electrical site into ./docs (served by GitHub Pages).
 
-    python3 build.py              # preview build: noindex, links to the preview URL
-    python3 build.py --production # launch build: indexable, canonical mgrelectrical.com.au
+    python3 build.py              # PREVIEW build into docs/: noindex, robots.txt blocks everything
+    python3 build.py --production # LIVE build into dist/: indexable, this is what goes on mgrelectrical.com.au
 
 Environment:
     PREVIEW_URL   absolute URL of the preview (for og:image), default GitHub Pages URL
-    OUT           output folder, default docs
+    OUT           output folder, default docs (preview) or dist (production)
 
 Needs: pip install jinja2 pillow numpy
 """
@@ -127,7 +127,9 @@ def make_images(out):
 
 def main():
     production = '--production' in sys.argv
-    out = os.path.join(ROOT, os.environ.get('OUT', 'docs'))
+    out = os.path.join(ROOT, os.environ.get('OUT', 'dist' if production else 'docs'))
+    if production and os.path.basename(out.rstrip('/')) == 'docs':
+        sys.exit('Refusing to write a production build into docs/: that folder is the GitHub Pages preview. Use dist/.')
     preview_url = os.environ.get('PREVIEW_URL', 'https://paulhauner.github.io/mgr-electrical-website').rstrip('/')
     base_url = PROD_URL if production else preview_url
     if os.path.isdir(out):
@@ -162,6 +164,13 @@ def main():
             f.write(f'  <url><loc>{loc}</loc></url>\n')
         f.write('</urlset>\n')
     open(os.path.join(out, '.nojekyll'), 'w').close()
+    if production:
+        # Self-check: a live build must never ship the preview's noindex/robots block.
+        bad = [f for f in os.listdir(out) if f.endswith('.html') and 'noindex' in open(os.path.join(out, f)).read()]
+        robots = open(os.path.join(out, 'robots.txt')).read()
+        if bad or 'Disallow: /' in robots:
+            sys.exit(f'Production build check FAILED: noindex in {bad} or robots.txt blocks crawling')
+        print('production check passed: no noindex, robots.txt allows crawling')
     print(f'built {"production" if production else "preview"} site into {out}')
 
 

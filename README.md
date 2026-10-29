@@ -7,14 +7,17 @@ The home page opens on **Mac's Street**, a little pixel-art game that plays itse
 - **Preview:** https://paulhauner.github.io/mgr-electrical-website/ (GitHub Pages, served from `docs/`; marked `noindex`)
 - **Live:** https://mgrelectrical.com.au (not switched over yet)
 
+> **Deploying to mgrelectrical.com.au? Never deploy `docs/`.** It's the preview build: every page is `noindex` and its `robots.txt` blocks all crawlers, so putting it live would drop the site from Google. Build the live site with `python3 build.py --production`, which writes to `dist/` and fails if the result isn't indexable. See [Launching](#launching-on-mgrelectricalcomau).
+
 ## Layout
 
 ```
 site/        static assets copied as-is: css, js, fonts, img, game layers
 templates/   Jinja page templates (one per page, same URLs as the old site)
 art/         Python that draws all the pixel art
-build.py     renders templates + generates poster, share card, favicons -> docs/
-docs/        built output, committed, served by GitHub Pages
+build.py     renders templates + generates poster, share card, favicons
+docs/        PREVIEW build (noindex), committed, served by GitHub Pages
+dist/        LIVE build from --production (not committed); this is what gets deployed
 ```
 
 No framework and no Node. The JavaScript is three plain files:
@@ -26,7 +29,7 @@ No framework and no Node. The JavaScript is three plain files:
 ## Building
 
 ```sh
-pip install jinja2 pillow numpy
+pip install -r requirements.txt   # jinja2, pillow, numpy
 python3 build.py                 # preview build into docs/
 python3 -m http.server -d docs   # look at it on http://localhost:8000/index.html
 ```
@@ -52,10 +55,10 @@ The old site runs on Cloudflare Pages with a `_worker.js` that handles the quote
 
 To launch:
 
-1. `python3 build.py --production` (drops `noindex`, opens up `robots.txt`, points og:image at the real domain)
-2. Copy the existing `_worker.js` from the current Cloudflare Pages deployment into `docs/` so the form keeps working
-3. Deploy `docs/` to that same Cloudflare Pages project
-4. Check: submit a test enquiry, tap a phone link, confirm both show in GTM preview
+1. `pip install -r requirements.txt && python3 build.py --production`. Output goes to `dist/`. It drops `noindex`, opens up `robots.txt`, points canonical/og URLs at mgrelectrical.com.au, adds the GTM `<noscript>` iframe, and exits with an error if any of that didn't happen.
+2. Bring the existing `/api/enquiry` handler across from the current Cloudflare Pages project so the form keeps working: a `_worker.js` goes inside `dist/`; a `functions/` folder goes at the repo root. An advanced-mode `_worker.js` must pass every non-`/api/` request through to `env.ASSETS.fetch(request)`.
+3. Deploy `dist/` to that same Cloudflare Pages project, e.g. `npx wrangler pages deploy dist --project-name <project>`. With Git integration instead: build command `pip install -r requirements.txt && python3 build.py --production`, build output directory `dist`.
+4. Check on the live domain (the form and tracking deliberately do nothing on other hosts): `curl -s https://mgrelectrical.com.au/ | grep -c noindex` prints `0`; submit a test enquiry; tap a phone link; confirm both show in GTM preview.
 
 ## Notes
 
